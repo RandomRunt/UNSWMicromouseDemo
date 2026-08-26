@@ -36,21 +36,21 @@ constexpr int16_t PWM_MIN = 15;
 constexpr int16_t PWM_THRESHOLD = 30;
 constexpr int16_t PWM_MAX_STEP = 50;
 
-// // A's tapered pure-pursuit parameters, with B's 90 mm wheelbase above. [ORIGINAL]
-// constexpr float PP_LOOKAHEAD_M = 0.055f;
-// constexpr float PP_SPEED_LOOKAHEAD_M = 0.200f;
-// constexpr float PP_CRUISE_SPEED_MPS = 0.300f;
-// constexpr float PP_CYLINDER_SPEED_MPS = 0.200f;
-// constexpr float PP_MAX_OMEGA_RAD_S = 9.0f;
-// constexpr float PP_TURN_SLOW = 0.300f;
-
-// A's tapered pure-pursuit parameters, with B's 90 mm wheelbase above.
-constexpr float PP_LOOKAHEAD_M = 0.085f; // was 0.055
+// A's tapered pure-pursuit parameters, with B's 90 mm wheelbase above. [ORIGINAL]
+constexpr float PP_LOOKAHEAD_M = 0.055f;
 constexpr float PP_SPEED_LOOKAHEAD_M = 0.200f;
-constexpr float PP_CRUISE_SPEED_MPS = 0.400f; // was 0.300f
+constexpr float PP_CRUISE_SPEED_MPS = 0.300f;
 constexpr float PP_CYLINDER_SPEED_MPS = 0.200f;
 constexpr float PP_MAX_OMEGA_RAD_S = 9.0f;
-constexpr float PP_TURN_SLOW = 0.200f; // was 0.300f
+constexpr float PP_TURN_SLOW = 0.300f;
+
+// // A's tapered pure-pursuit parameters, with B's 90 mm wheelbase above.
+// constexpr float PP_LOOKAHEAD_M = 0.085f; // was 0.055
+// constexpr float PP_SPEED_LOOKAHEAD_M = 0.200f;
+// constexpr float PP_CRUISE_SPEED_MPS = 0.400f; // was 0.300f
+// constexpr float PP_CYLINDER_SPEED_MPS = 0.200f;
+// constexpr float PP_MAX_OMEGA_RAD_S = 9.0f;
+// constexpr float PP_TURN_SLOW = 0.200f; // was 0.300f
 
 constexpr float VELOCITY_KP = 30.0f;
 constexpr float VELOCITY_KI = 1.0f;
