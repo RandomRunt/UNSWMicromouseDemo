@@ -1,0 +1,4 @@
+Front width = 7.5cm
+Side Length = 8cm
+Front Lidar placed at front center
+Side Lidar placed 2cm front of the center and both sits at the side edges.
