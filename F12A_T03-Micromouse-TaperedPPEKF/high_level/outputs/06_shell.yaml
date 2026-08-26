@@ -1,0 +1,130 @@
+inner_to_inner_mm: null
+outer_to_outer_mm: 1835.0
+derived_inner_span_mm: 1820.0
+derived_outer_span_mm: 1850.0
+outer_wall_thickness_mm: 15.0
+diagonal_thickness_mm: 35.0
+outer_pole_to_wall_mm: 100.0
+corner_pole_to_diagonal_mm: 100.0
+derived_edge_gap_mm: 100.0
+derived_corner_gap_mm: 100.0
+diagonal_leg_mm: 400.0
+diagonal_hypotenuse_mm: 564.0
+use_outer_to_outer: false
+use_diagonal_leg: false
+pixels_per_mm: 0.5555555555555556
+inner_box_mm:
+- -100.0
+- -100.0
+- 1720.0
+- 1720.0
+outer_box_mm:
+- -115.0
+- -115.0
+- 1735.0
+- 1735.0
+segments:
+- kind: d
+  corner: TL
+  side: null
+  inner_mm:
+  - - -100.0
+    - 318.5786437626905
+  - - 318.5786437626905
+    - -100.0
+  outer_mm:
+  - - -115.0
+    - 284.08116907963216
+  - - 284.08116907963216
+    - -115.0
+- kind: d
+  corner: TR
+  side: null
+  inner_mm:
+  - - 1301.4213562373095
+    - -100.0
+  - - 1720.0
+    - 318.5786437626905
+  outer_mm:
+  - - 1335.9188309203678
+    - -115.0
+  - - 1735.0
+    - 284.0811690796322
+- kind: d
+  corner: BR
+  side: null
+  inner_mm:
+  - - 1720.0
+    - 1301.4213562373097
+  - - 1301.4213562373097
+    - 1720.0
+  outer_mm:
+  - - 1735.0
+    - 1335.9188309203678
+  - - 1335.9188309203678
+    - 1735.0
+- kind: d
+  corner: BL
+  side: null
+  inner_mm:
+  - - 318.5786437626905
+    - 1720.0
+  - - -100.0
+    - 1301.4213562373095
+  outer_mm:
+  - - 284.0811690796322
+    - 1735.0
+  - - -115.0
+    - 1335.9188309203678
+- kind: h
+  corner: null
+  side: top
+  inner_mm:
+  - - 318.5786437626905
+    - -100.0
+  - - 1301.4213562373095
+    - -100.0
+  outer_mm:
+  - - 284.08116907963216
+    - -115.0
+  - - 1335.9188309203678
+    - -115.0
+- kind: v
+  corner: null
+  side: right
+  inner_mm:
+  - - 1720.0
+    - 318.5786437626905
+  - - 1720.0
+    - 1301.4213562373097
+  outer_mm:
+  - - 1735.0
+    - 284.0811690796322
+  - - 1735.0
+    - 1335.9188309203678
+- kind: h
+  corner: null
+  side: bottom
+  inner_mm:
+  - - 1301.4213562373097
+    - 1720.0
+  - - 318.5786437626905
+    - 1720.0
+  outer_mm:
+  - - 1335.9188309203678
+    - 1735.0
+  - - 284.0811690796322
+    - 1735.0
+- kind: v
+  corner: null
+  side: left
+  inner_mm:
+  - - -100.0
+    - 1301.4213562373095
+  - - -100.0
+    - 318.5786437626905
+  outer_mm:
+  - - -115.0
+    - 1335.9188309203678
+  - - -115.0
+    - 284.08116907963216

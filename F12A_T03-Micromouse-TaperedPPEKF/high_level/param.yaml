@@ -1,0 +1,247 @@
+# Flip true for mazes that place free-floating black PLA cylinders (anywhere,
+# not on the pole/wall lattice). Poles + walls still run; cylinders are extra
+# occupancy disks. Detection happens after the fine warp.
+enable_cylinder_detection: true
+
+maze:
+  cell_size_mm: 180
+  grid_cols: 9
+  grid_rows: 9
+  pole_grid_cols: 10
+  pole_grid_rows: 10
+  post_size_mm: 8
+  wall_thickness_mm: 3
+
+image:
+  path: ../cylinders21.png
+
+output:
+  dir: outputs
+  # Also always written: outputs/all/{maze*,cylinder*}/ occupancy for every
+  # sibling photo (mazes without cylinders, cylinder* with detection on).
+  # Does not change image.path. Use main.py --skip-all to skip that batch.
+  pole_prefix: 01_poles
+  corner_prefix: 02_corners
+  warp_prefix: 03_warp
+  fine_warp_prefix: 04_fine_warp
+  walls_prefix: 05_walls
+  shell_prefix: 06_shell
+  all_walls_prefix: 07_all_walls
+  cylinders_prefix: 05b_cylinders
+  occupancy_prefix: 08_occupancy
+  path_centers_prefix: 09_path_centers
+  path_minturns_prefix: 09_path_minturns
+  path_fastest_prefix: 09_path_fastest
+  path_fastest_minturns_prefix: 09_path_fastest_minturns
+  path_cylinders_prefix: 09_path_cylinders
+  cells_prefix: 09_cells
+  waypoints_prefix: 10_waypoints
+  # Written next to the .ino so the sketch can #include it
+  waypoints_header: ../waypoints_planned.hpp
+  walls_export_prefix: 11_walls
+  walls_header: ../walls_planned.hpp
+
+path:
+  # Maze cell indices (col, row), 0-based; waypoints use cell centres.
+  # Corner cells (0,0)/(8,0)/(0,8)/(8,8) are blocked by chamfer diagonals.
+  start_cell: [3, 7]
+  goal_cell: [4, 5]
+  # When set, export uses these cell centres instead of planned modes.
+  # manual_cells: []
+
+planning:
+  # All modes always run:
+  #   cell_centers            — orthogonal, every maze-cell centre
+  #   cell_centers_minturns   — same + turn penalty
+  #   fastest                 — fine-grid 8-connected A* + LOS + RDP
+  #   fastest_minturns        — fine-grid + turn penalty (prefer straights)
+  #   cylinders1..7 — minturns outside + fastest inside, at fixed pads below
+  #   cylinders8    — minturns through cylinder section if pad allows, else hybrid
+  rdp_epsilon_mm: 8
+  # Orthogonal minturns: extra cost per 90° turn (cell steps)
+  turn_penalty: 0.1
+  # Fine-grid minturns: extra cost per 45° heading step (grid move units)
+  fastest_turn_penalty: 1.0
+  # Wall mazes: minturns | centers | fastest | fastest_minturns
+  export_mode: minturns
+  # Cylinder mazes: cylinders1|2|3|4|5|6|7|8 (match 09_path_cylindersN.png) | …
+  # Replan without vision: python3 main.py --path-only
+  # Re-export without re-planning: python3 main.py --export-only [--mode cylinders3]
+  cylinder_export_mode: cylinders3
+  # Fixed hybrid variants → 09_path_cylinders1..7.png (pad mm).
+  # cylinders8 is style-only (minturns-in-region when possible) on primary pad.
+  cylinder_path_pads_mm:
+    cylinders1: 50
+    cylinders2: 40
+    cylinders3: 30
+    cylinders4: 20
+    cylinders5: 10
+    cylinders6: 5
+    cylinders7: 0
+  # Primary occupancy: largest named pad that still paths (falls through list).
+  cylinder_padding_max_mm: 50
+  cylinder_padding_min_mm: 0
+  cylinder_padding_step_mm: 5
+
+robot:
+  # Clearance used when inflating occupancy (see map.inflate_shape).
+  # ~80 mm square body (≈ WHEEL_BASE): half-side = 40 mm, circumradius = 40√2 ≈ 57.
+  #   disk    + radius_mm: 57  — circle covering corners at any yaw (recommended)
+  #   square  + radius_mm: 40  — axis-aligned square footprint (half-side)
+  #   diamond + radius_mm: 40  — Manhattan grow; not a square body, just the shape
+  radius_mm: 57
+  clearance_scale: 1.0
+
+map:
+  occupancy_cell_mm: 2
+  margin_mm: 20
+  # disk | square | diamond  (see robot.radius_mm comments)
+  inflate_shape: disk
+  # Extra obstacle padding beyond physical size (before robot inflate).
+  # For cylinder mazes, planning.cylinder_path_pads_mm overrides this (largest
+  # feasible named pad becomes primary occupancy clearance).
+  wall_padding_mm: 0
+  post_padding_mm: 0
+  shell_padding_mm: 0
+  cylinder_padding_mm: 0
+  # Keep cylinder padding + robot inflate-from-cylinders inside the cylinder
+  # cell block (5×5 etc.) so clearance cannot occupy neighbour maze corridors.
+  clip_cylinder_padding_to_region: true
+  # Extra non-grid segments (maze mm: [x1,y1,x2,y2]) → MAP_LEGACY_FACES with shell.
+  # legacy_segments_mm: []
+
+# Black PLA cylinders on the white floor (only used when enable_cylinder_detection).
+# diameter_mm is the physical size for occupancy; detection allows a wider pixel
+# radius band because shadows inflate the dark disk in the photo.
+cylinders:
+  diameter_mm: 95
+  dark_threshold: 75
+  # Mild open severs thin acrylic walls; too strong eats dim / clustered
+  # cylinder cores (cylinder3/8 bottom-left).
+  morph_open: 5
+  morph_close: 3
+  # Disk mask_fill doubles as circularity (touching cylinders merge CC blobs).
+  min_circularity: 0.70
+  min_fill: 0.55
+  # Accept DT peak radii in [lo, hi] × (0.5 * diameter_mm * pixels_per_mm)
+  # hi is loose: overhead shadows make the dark disk larger than physical.
+  radius_scale_lo: 0.70
+  radius_scale_hi: 2.50
+  max_inner_mean: 70
+  min_ring_contrast: 25
+  nms_radius_scale: 1.35
+  roi_inset_cells: 0.20
+  board_margin_mm: 40
+  # Drop false circles that land on a post centre (0 = disabled)
+  reject_near_pole_mm: 12
+  # Convex-hull buffer beyond each cylinder radius (05b_cylinders_region.png).
+  region_margin_mm: 180
+  # Cell block on 07_all_walls_overlay_region.png:
+  # Cylinder-centre cells → grow open AABB until walls → prefer 5×5 inside
+  # grown pad, else 5×4 / 4×5. Interior lattice poles are ignored (posts often
+  # remain). Centres (not disk/hull spill) avoid a 1-cell-wide false AABB.
+  region_reject_interior_poles: false
+  region_cell_sizes_preferred:
+    - [5, 5]
+  region_cell_sizes_fallback:
+    - [5, 4]
+    - [4, 5]
+# Outer aluminum shell (straight + 45° corner diagonals). LiDAR uses inner faces.
+# Placement driven by measured pole→shell gaps (100 mm). Recorded OD/diagonal
+# triangle sizes kept for reference only (1805 / 400×400 hyp≈564 conflict with
+# exact 100 mm gaps on a 1620 mm pole span).
+shell:
+  # inner_to_inner_mm: 1805       # optional alt placement; leave unset to use gaps
+  outer_to_outer_mm: 1835          # unused while use_outer_to_outer is false
+  outer_wall_thickness_mm: 15      # cosmetic band only (not measured)
+  diagonal_thickness_mm: 35        # cosmetic band only (not measured)
+  diagonal_hypotenuse_mm: 564      # measured reference (not used for placement)
+  diagonal_leg_mm: 400             # measured reference (not used for placement)
+  outer_pole_to_wall_mm: 100       # place H/V inner faces (pole centres → shell)
+  corner_pole_to_diagonal_mm: 100  # place chamfers (near-corner poles → diagonal)
+  use_outer_to_outer: false
+  use_diagonal_leg: false          # false → 100 mm corner-pole offset
+
+poles:
+  # Pixel sizes below assume ~1920px-wide photos; larger images auto-scale up
+  # (see poles.scale_params_for_image). Never scales down.
+  ref_width_px: 1920
+  assume_all_present: false
+  skip_chamfer_poles: true
+  # Drop outliers farther than k × median NN from the pole-cluster centre (shoes).
+  cluster_filter_spacings: 6.5
+  # Expand outer-frame quad slightly so near-rail poles survive; rejects outside junk.
+  frame_filter_margin_px: 20
+  # Slightly lower V floor so dark/faint cyan poles still detect (was 55).
+  hsv_lo: [85, 35, 45]
+  hsv_hi: [112, 255, 255]
+  min_area: 14
+  # 424 on cylinder12 pole (7,8); keep a little headroom for similar fat blobs.
+  max_area: 480
+  max_blob_side: 42
+  # Looser aspect: faint poles can fuse with nearby cyan at lower V (was 4.0).
+  max_aspect: 5.5
+  min_neighbours: 3
+  neighbour_radius_scale: 2.8
+  merge_distance_px: 22
+  morph_kernel: 3
+  overlay_circle_radius: 6
+  # After fine warp: re-check empty lattice sites for cyan (missed edge poles).
+  lattice_recover_min_cyan_px: 40
+  lattice_recover_radius_px: 22
+
+corners:
+  outer_band_dilate_px: 120
+  outer_band_erode_px: 10
+  canny_lo: 50
+  canny_hi: 150
+  hough_threshold: 80
+  hough_min_length: 150
+  hough_max_gap: 20
+  outer_min_line_length: 200
+  colour_morph_kernel: 5
+  colour_min_area: 150
+  overlay_circle_radius: 12
+  diagonal_colours:
+    pink:
+      hsv_lo: [140, 15, 100]
+      hsv_hi: [175, 100, 255]
+    orange:
+      hsv_lo: [5, 100, 100]
+      hsv_hi: [22, 255, 255]
+    yellow:
+      hsv_lo: [22, 80, 100]
+      hsv_hi: [40, 255, 255]
+    purple:
+      hsv_lo: [115, 35, 60]
+      hsv_hi: [135, 120, 160]
+
+warp:
+  output_size_px: 2000
+  orientation:
+    pink: TL
+    orange: TR
+    yellow: BR
+    purple: BL
+  fine:
+    px_per_cell: 100
+    margin_cells: 1.5
+
+walls:
+  sample_half_width_px: 6
+  end_trim: 0.12
+  # Primary ridge = mean of darkest body_percentile stations (70 historical).
+  dark_body_percentile: 70
+  # 128 catches glossy top-right near-misses (cylinder2/5/7/8/10 h@8,3 @ ~122–126).
+  dark_ridge_threshold: 128
+  # Darker-tail (40) rescues walls the 70-body dilutes above 128 (cylinder13
+  # left h@0,4 @ ~111) without taking empty rail edges (~117–128).
+  dark_tail_percentile: 40
+  dark_tail_threshold: 112
+  enhance_threshold: 15
+  # Weak enhance (15–16) must also show a dark enough tail — blocks cylinder13
+  # false h@8,5 (enh≈15, tail≈128) while keeping cylinder12 h@8,3 (tail≈122).
+  enhance_max_dark_tail: 126
+  # Strong enhance alone (maze3 glossy h@8,3 @ enh≈17).
+  enhance_strong_threshold: 17
+  enhance_kernel_px: 25

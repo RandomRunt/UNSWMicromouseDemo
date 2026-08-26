@@ -1,0 +1,18 @@
+cell_mm: 2.0
+origin_mm:
+- -135.0
+- -135.0
+width_mm: 1890.0
+height_mm: 1890.0
+shape_hw:
+- 945
+- 945
+occupied_cells: 80672
+inflated_cells: 603263
+inflate_shape: disk
+wall_padding_mm: 0.0
+post_padding_mm: 0.0
+shell_padding_mm: 0.0
+cylinder_padding_mm: 30.0
+robot_radius_mm: 57.0
+clearance_scale: 1.0
