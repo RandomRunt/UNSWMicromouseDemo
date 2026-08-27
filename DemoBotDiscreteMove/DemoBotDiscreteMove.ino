@@ -92,8 +92,11 @@ constexpr uint8_t TASK42_RECALIBRATION_ATTEMPTS = 3;
 
 // Normal commands are f/l/r. A Task 4.2 tuple is (clockwise turn degrees,
 // forward millimetres); negative angles turn left. Commas separate modes.
-const char ROUTE[] PROGMEM = "fr,[(58.1,287.4),(-3.9,116.7),(-64.3,377.6),],fl";
-// const char ROUTE[] PROGMEM ="frfflflfflfflflfrfrfrffrffrfrfrlflflfflflfrfrfrffrfrflfrf";
+// const char ROUTE[] PROGMEM = "fr,[(58.1,287.4),(-3.9,116.7),(-64.3,377.6),],fl";
+// const char ROUTE[] PROGMEM = "frfflflfflfflflfrfrfrffrffrfrfrlflflfflflfrfrfrffrfrflfrf";
+const char ROUTE[] PROGMEM = "flflfrfrflflfrfflfrflflfflfrfrflflfrfrffrfffff"; // Left side of maze
+// const char ROUTE[] PROGMEM = "frfrflflfrfrflffrflfrfrffrflflfrfrflflfflfffff"; // Right side of maze
+
 
 struct Task42Move {
     int16_t turnTenths;

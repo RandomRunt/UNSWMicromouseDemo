@@ -22,8 +22,8 @@ constexpr uint8_t FRONT_LIDAR_ADDRESS = 0x56;
 constexpr uint8_t RIGHT_LIDAR_ADDRESS = 0x58;
 
 // DemoBot geometry and encoder conventions.
-constexpr float WHEEL_RADIUS_M = 0.016f;
-constexpr float WHEEL_BASE_M = 0.071f;
+constexpr float WHEEL_RADIUS_M = 0.0161f;
+constexpr float WHEEL_BASE_M = 0.075f; // Most Demo Bots 0.075f; 0.071f for grey;
 constexpr uint16_t ENCODER_COUNTS_PER_REVOLUTION = 700;
 constexpr int8_t LEFT_ENCODER_FORWARD_SIGN = -1;
 constexpr int8_t RIGHT_ENCODER_FORWARD_SIGN = +1;
