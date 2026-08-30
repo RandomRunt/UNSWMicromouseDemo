@@ -135,10 +135,22 @@ button {
   inset: 0;
   pointer-events: none;
   background:
-    linear-gradient(90deg, rgba(var(--page-rgb), 0.95) 0%, rgba(var(--page-rgb), 0.58) 31%, transparent 56%),
     radial-gradient(circle at center, transparent 34%, var(--vignette-edge) 100%),
     repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.012) 0 1px, transparent 1px 4px);
   transition: background 240ms ease;
+}
+
+.canvas-vignette::before {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(var(--page-rgb), 0.95) 0%, rgba(var(--page-rgb), 0.58) 31%, transparent 56%);
+  content: "";
+  opacity: 1;
+  transition: opacity 420ms ease;
+}
+
+.canvas-vignette--inspection-active::before {
+  opacity: 0;
 }
 
 .canvas-reticle {
@@ -197,7 +209,12 @@ button {
 
 .chapter-copy {
   width: min(42rem, 42vw);
-  pointer-events: auto;
+  pointer-events: none;
+  transition: opacity 420ms ease;
+}
+
+.chapter-copy--inspection-active {
+  opacity: 0;
 }
 
 .chapter-copy__meta {
@@ -487,18 +504,12 @@ button {
 }
 
 .chapter-rail strong {
-  opacity: 0;
+  opacity: 1;
   font-weight: 600;
-  transition: opacity 160ms ease;
 }
 
 .chapter-rail li.is-active a {
   color: var(--amber);
-}
-
-.chapter-rail li.is-active strong,
-.chapter-rail a:hover strong {
-  opacity: 1;
 }
 
 .chapter-rail li.is-active a::before {
@@ -566,27 +577,67 @@ button {
   background: rgba(255, 184, 0, 0.08);
 }
 
+.component-callout {
+  --component-accent: var(--amber);
+}
+
+.component-callout__connector {
+  position: fixed;
+  z-index: 39;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: visible;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 140ms ease;
+}
+
+.component-callout__line {
+  stroke: var(--ink);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-dasharray: 3 5;
+  filter: drop-shadow(0 1px 3px var(--shadow));
+}
+
+.component-callout__dot {
+  vector-effect: non-scaling-stroke;
+}
+
+.component-callout__dot--anchor {
+  fill: var(--component-accent);
+  stroke: var(--page);
+  stroke-width: 2;
+}
+
+.component-callout__dot--card {
+  fill: var(--ink);
+}
+
 .component-card {
   position: fixed;
   z-index: 40;
-  bottom: 2rem;
-  left: clamp(1.5rem, 6vw, 6.5rem);
-  width: min(28rem, calc(100vw - 3rem));
+  top: 0;
+  left: 0;
+  width: min(24rem, calc(100vw - 3rem));
   padding: 1.15rem 3.2rem 1.15rem 1.3rem;
   border: 1px solid var(--line);
   display: grid;
   grid-template-columns: 3px 1fr;
   gap: 1rem;
+  color: var(--ink);
   background: var(--surface-raised);
   box-shadow: 0 1.5rem 5rem var(--shadow);
   backdrop-filter: blur(16px);
+  visibility: hidden;
   animation: panel-in 220ms ease both;
 }
 
 .component-card__rule {
   width: 3px;
   height: 100%;
-  box-shadow: 0 0 16px currentColor;
+  box-shadow: 0 0 16px var(--component-accent);
 }
 
 .component-card__code {
@@ -732,9 +783,11 @@ button {
 
 @media (max-width: 960px) {
   .canvas-vignette {
-    background:
-      linear-gradient(0deg, rgba(var(--page-rgb), 0.97) 0%, rgba(var(--page-rgb), 0.24) 48%, transparent 75%),
-      radial-gradient(circle at center, transparent 34%, var(--vignette-edge) 100%);
+    background: radial-gradient(circle at center, transparent 34%, var(--vignette-edge) 100%);
+  }
+
+  .canvas-vignette::before {
+    background: linear-gradient(0deg, rgba(var(--page-rgb), 0.97) 0%, rgba(var(--page-rgb), 0.24) 48%, transparent 75%);
   }
 
   .canvas-reticle {
@@ -775,7 +828,10 @@ button {
   }
 
   .chapter-rail strong {
-    display: none;
+    display: block;
+    overflow: hidden;
+    font-size: 0.5rem;
+    text-overflow: ellipsis;
   }
 
   .component-index {
@@ -792,8 +848,9 @@ button {
   }
 
   .component-card {
-    bottom: 9rem;
-    left: 1rem;
+    right: auto;
+    bottom: auto;
+    left: 0;
   }
 
   .signal-chain {
@@ -873,9 +930,10 @@ button {
   }
 
   .component-card {
-    right: 1rem;
-    bottom: 8rem;
-    width: auto;
+    right: auto;
+    bottom: auto;
+    left: 0;
+    width: min(24rem, calc(100vw - 2rem));
   }
 
   .signal-chain {

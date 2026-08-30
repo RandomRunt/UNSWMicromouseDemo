@@ -1,7 +1,8 @@
 import { Canvas } from '@react-three/fiber';
 import { Suspense } from 'react';
-import type { ComponentId } from '../types/showcase';
+import type { ComponentId, ComponentScreenAnchorRef } from '../types/showcase';
 import { CameraRig } from '../scene/CameraRig';
+import { ComponentAnchorTracker } from '../scene/ComponentAnchorTracker';
 import { Lighting } from '../scene/Lighting';
 import { MazeDemo } from '../scene/MazeDemo';
 import { GLBMicromouse, ProceduralMicromouse } from '../scene/MicromouseModel';
@@ -16,9 +17,13 @@ interface ShowcaseCanvasProps {
   explorationEnabled: boolean;
   selected: ComponentId | null;
   onSelect: (id: ComponentId) => void;
+  onClearSelection: () => void;
+  onInspectionInput: () => void;
+  inspectionActive: boolean;
   reducedMotion: boolean;
   assetAvailable: boolean;
   theme: ThemeMode;
+  componentAnchorRef: ComponentScreenAnchorRef;
 }
 
 export function ShowcaseCanvas({
@@ -27,9 +32,13 @@ export function ShowcaseCanvas({
   explorationEnabled,
   selected,
   onSelect,
+  onClearSelection,
+  onInspectionInput,
+  inspectionActive,
   reducedMotion,
   assetAvailable,
   theme,
+  componentAnchorRef,
 }: ShowcaseCanvasProps) {
   return (
     <div
@@ -43,7 +52,7 @@ export function ShowcaseCanvas({
         dpr={[1, 1.65]}
         camera={{ position: [4.5, 2.8, 5.4], fov: 34, near: 0.1, far: 80 }}
         gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
-        onPointerMissed={() => onSelect(selected ?? 'chassis')}
+        onPointerMissed={onClearSelection}
       >
         <color attach="background" args={[theme === 'dark' ? '#4a5154' : '#e6e7e3']} />
         <Lighting theme={theme} />
@@ -51,6 +60,7 @@ export function ShowcaseCanvas({
         <CameraRig
           progress={progress}
           explorationEnabled={explorationEnabled}
+          onInspectionInput={onInspectionInput}
           reducedMotion={reducedMotion}
         />
         <Suspense fallback={<SceneLoader />}>
@@ -71,9 +81,12 @@ export function ShowcaseCanvas({
           )}
           <SensorBeams activeChapter={activeChapter} reducedMotion={reducedMotion} />
           <MazeDemo activeChapter={activeChapter} reducedMotion={reducedMotion} />
+          <ComponentAnchorTracker selected={selected} anchorRef={componentAnchorRef} />
         </Suspense>
       </Canvas>
-      <div className="canvas-vignette" />
+      <div
+        className={`canvas-vignette${inspectionActive ? ' canvas-vignette--inspection-active' : ''}`}
+      />
       <div className="canvas-reticle" aria-hidden="true">
         <span />
         <i />

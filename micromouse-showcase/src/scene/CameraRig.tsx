@@ -1,11 +1,12 @@
 import { OrbitControls } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
-import { useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 
 interface CameraRigProps {
   progress: number;
   explorationEnabled: boolean;
+  onInspectionInput: () => void;
   reducedMotion: boolean;
 }
 
@@ -18,10 +19,32 @@ const cameraKeyframes: Array<[number, number, number]> = [
   [4.8, 3.2, 5.2],
 ];
 
-export function CameraRig({ progress, explorationEnabled, reducedMotion }: CameraRigProps) {
+export function CameraRig({
+  progress,
+  explorationEnabled,
+  onInspectionInput,
+  reducedMotion,
+}: CameraRigProps) {
   const { camera } = useThree();
   const target = useMemo(() => new THREE.Vector3(0, 0.35, 0), []);
   const desired = useMemo(() => new THREE.Vector3(), []);
+  const isUsingControlsRef = useRef(false);
+
+  const handleControlStart = useCallback(() => {
+    if (!explorationEnabled) return;
+    isUsingControlsRef.current = true;
+    onInspectionInput();
+  }, [explorationEnabled, onInspectionInput]);
+
+  const handleControlChange = useCallback(() => {
+    if (isUsingControlsRef.current) onInspectionInput();
+  }, [onInspectionInput]);
+
+  const handleControlEnd = useCallback(() => {
+    if (!isUsingControlsRef.current) return;
+    isUsingControlsRef.current = false;
+    onInspectionInput();
+  }, [onInspectionInput]);
 
   useFrame((_, delta) => {
     if (explorationEnabled) return;
@@ -49,6 +72,9 @@ export function CameraRig({ progress, explorationEnabled, reducedMotion }: Camer
       minPolarAngle={0.45}
       maxPolarAngle={1.45}
       target={[0, 0.35, 0]}
+      onStart={handleControlStart}
+      onChange={handleControlChange}
+      onEnd={handleControlEnd}
       makeDefault
     />
   );

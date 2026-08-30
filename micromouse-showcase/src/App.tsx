@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ComponentLabel } from './components/ComponentLabel';
 import { ShowcaseCanvas } from './components/ShowcaseCanvas';
 import { StoryOverlay } from './components/StoryOverlay';
@@ -6,7 +6,7 @@ import { chapters } from './story/chapters';
 import { useKioskReset } from './story/useKioskReset';
 import { useReducedMotion } from './story/useReducedMotion';
 import { useScrollProgress } from './story/useScrollProgress';
-import type { ComponentId } from './types/showcase';
+import type { ComponentId, ComponentScreenAnchor } from './types/showcase';
 
 export type ThemeMode = 'light' | 'dark';
 
@@ -14,6 +14,9 @@ function App() {
   const { progress, activeChapter, isAtBottom } = useScrollProgress(chapters.length);
   const reducedMotion = useReducedMotion();
   const [selected, setSelected] = useState<ComponentId | null>(null);
+  const [isInspecting, setIsInspecting] = useState(false);
+  const inspectionIdleTimerRef = useRef<number | null>(null);
+  const componentAnchorRef = useRef<ComponentScreenAnchor | null>(null);
   const [assetAvailable, setAssetAvailable] = useState(false);
   const [theme, setTheme] = useState<ThemeMode>(() => {
     const savedTheme = window.localStorage.getItem('micromouse-theme');
@@ -38,10 +41,50 @@ function App() {
     return () => controller.abort();
   }, []);
 
+  useEffect(() => {
+    if (isAtBottom) return;
+
+    if (inspectionIdleTimerRef.current !== null) {
+      window.clearTimeout(inspectionIdleTimerRef.current);
+      inspectionIdleTimerRef.current = null;
+    }
+    setIsInspecting(false);
+  }, [isAtBottom]);
+
+  useEffect(() => () => {
+    if (inspectionIdleTimerRef.current !== null) {
+      window.clearTimeout(inspectionIdleTimerRef.current);
+    }
+  }, []);
+
   const restartTour = useCallback(() => {
     setSelected(null);
+    componentAnchorRef.current = null;
     window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' });
   }, [reducedMotion]);
+
+  const selectComponent = useCallback((id: ComponentId) => {
+    componentAnchorRef.current = null;
+    setSelected((current) => current === id ? null : id);
+  }, []);
+
+  const clearComponent = useCallback(() => {
+    componentAnchorRef.current = null;
+    setSelected(null);
+  }, []);
+
+  const handleInspectionInput = useCallback(() => {
+    setIsInspecting(true);
+
+    if (inspectionIdleTimerRef.current !== null) {
+      window.clearTimeout(inspectionIdleTimerRef.current);
+    }
+
+    inspectionIdleTimerRef.current = window.setTimeout(() => {
+      inspectionIdleTimerRef.current = null;
+      setIsInspecting(false);
+    }, 10_000);
+  }, []);
 
   useKioskReset(restartTour);
 
@@ -52,23 +95,31 @@ function App() {
         activeChapter={activeChapter}
         explorationEnabled={isAtBottom}
         selected={selected}
-        onSelect={setSelected}
+        onSelect={selectComponent}
+        onClearSelection={clearComponent}
+        onInspectionInput={handleInspectionInput}
+        inspectionActive={isInspecting}
         reducedMotion={reducedMotion}
         assetAvailable={assetAvailable}
         theme={theme}
+        componentAnchorRef={componentAnchorRef}
       />
 
       <StoryOverlay
         activeChapter={activeChapter}
         selected={selected}
         assetAvailable={assetAvailable}
-        onSelect={setSelected}
+        onSelect={selectComponent}
         onRestart={restartTour}
         theme={theme}
         onToggleTheme={() => setTheme((current) => current === 'dark' ? 'light' : 'dark')}
       />
 
-      <ComponentLabel selected={selected} onClose={() => setSelected(null)} />
+      <ComponentLabel
+        selected={selected}
+        anchorRef={componentAnchorRef}
+        onClose={clearComponent}
+      />
 
       <main id="story" className="story" tabIndex={-1}>
         {chapters.map((chapter, index) => (
@@ -79,7 +130,11 @@ function App() {
             aria-labelledby={`chapter-title-${chapter.id}`}
             data-testid={`chapter-${chapter.id}`}
           >
-            <div className="chapter-copy">
+            <div
+              className={`chapter-copy${index === chapters.length - 1 && isInspecting
+                ? ' chapter-copy--inspection-active'
+                : ''}`}
+            >
               <div className="chapter-copy__meta">
                 <span>{chapter.number} / {String(chapters.length).padStart(2, '0')}</span>
                 <span>{chapter.eyebrow}</span>

@@ -41,3 +41,13 @@ export interface ComponentDefinition {
   accent: string;
   explodeOffset: [number, number, number];
 }
+
+export interface ComponentScreenAnchor {
+  x: number;
+  y: number;
+  visible: boolean;
+}
+
+export interface ComponentScreenAnchorRef {
+  current: ComponentScreenAnchor | null;
+}
