@@ -1,0 +1,11 @@
+node_modules
+dist
+playwright-report
+test-results
+*.local
+cad/source/*.f3d
+cad/source/*.f3z
+cad/source/*.step
+cad/source/*.stp
+cad/blender/*.blend
+cad/blender/*.blend1

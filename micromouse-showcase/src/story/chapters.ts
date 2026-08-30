@@ -1,0 +1,58 @@
+import type { StoryChapter } from '../types/showcase';
+
+export const chapters: StoryChapter[] = [
+  {
+    id: 'meet',
+    number: '01',
+    eyebrow: 'UNSW Robotics',
+    title: 'Micromouse for Education.',
+    body: 'An educational twist on the famous Micromouse competition robot - a compact autonomous robot designed to sense maze walls, plan a route, and navigate it under closed-loop control.',
+    metric: '180',
+    metricLabel: 'mm class',
+  },
+  {
+    id: 'inside',
+    number: '02',
+    eyebrow: 'Exploded architecture',
+    title: 'Custom Robot for Teaching.',
+    body: 'Sensors, power, drive, and control hardware are connected with custom PCBs held together in a student-designed chassis. Select any part to inspect it.',
+    metric: '14',
+    metricLabel: 'key systems',
+  },
+  {
+    id: 'sense',
+    number: '03',
+    eyebrow: 'Perception',
+    title: 'Multiple Perception Sensors.',
+    body: 'Three range sensors read nearby walls while encoders measure wheel motion and the IMU tracks yaw rotation.',
+    metric: '03',
+    metricLabel: 'range axes',
+  },
+  {
+    id: 'think',
+    number: '04',
+    eyebrow: 'Control pipeline',
+    title: 'From Sensors to Motion.',
+    body: 'Sensor signals are fused into a pose estimate using an Extended Kalman Filter, compared against a path, then converted into precise motor commands.',
+    metric: '04',
+    metricLabel: 'control stages',
+  },
+  {
+    id: 'move',
+    number: '05',
+    eyebrow: 'Path following',
+    title: 'Real Time Maze Exploration.',
+    body: 'A look-ahead target pulls the robot through the route while continuous corrections keep the chassis centred.',
+    metric: '60',
+    metricLabel: 'updates / sec',
+  },
+  {
+    id: 'explore',
+    number: '06',
+    eyebrow: 'Free inspection',
+    title: "Explore the Digital Twin.",
+    body: "Orbit the micromouse's digital twin, zoom into the stack, or use the component index to focus on a subsystem.",
+    metric: '360°',
+    metricLabel: 'inspection',
+  },
+];

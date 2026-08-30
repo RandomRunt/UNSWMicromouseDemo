@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "skills": {
+    "3d-web-experience": {
+      "source": "davila7/claude-code-templates",
+      "sourceType": "github",
+      "skillPath": "cli-tool/components/skills/creative-design/3d-web-experience/SKILL.md",
+      "computedHash": "ba4a54a164735ea7cd1b3561853e1bd83c143713d7202bbd7e67cc8a24e37ff8"
+    },
+    "accessibility": {
+      "source": "davila7/claude-code-templates",
+      "sourceType": "github",
+      "skillPath": "cli-tool/components/skills/development/accessibility/SKILL.md",
+      "computedHash": "3f390c14d09ca45da332b6c421b3195d12da099ec24ee549f80e666ec48dc89b"
+    },
+    "e2e-testing-patterns": {
+      "source": "davila7/claude-code-templates",
+      "sourceType": "github",
+      "skillPath": "cli-tool/components/skills/development/e2e-testing-patterns/SKILL.md",
+      "computedHash": "951d56b0e9641e96e85cbb16629bbb1b58fb5d98fc47b65d3356e4c1ba4d25e0"
+    },
+    "frontend-design": {
+      "source": "davila7/claude-code-templates",
+      "sourceType": "github",
+      "skillPath": "cli-tool/components/skills/creative-design/frontend-design/SKILL.md",
+      "computedHash": "516bd2154eb843a8240e43d5b285229129853114ad7075a5e141e1c08e408c84"
+    }
+  }
+}
