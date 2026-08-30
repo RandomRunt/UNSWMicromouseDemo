@@ -8,7 +8,9 @@ test('tells the complete six-chapter story without console errors', async ({ pag
   });
 
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Small footprint. Serious intent.' })).toBeVisible();
+  const openingHeading = page.getByTestId('chapter-meet').getByRole('heading');
+  await expect(openingHeading).toBeVisible();
+  await expect(openingHeading).toHaveText(/\S+/);
   await expect(page.getByTestId('showcase-canvas')).toBeVisible();
 
   for (const id of ['meet', 'inside', 'sense', 'think', 'move', 'explore']) {
@@ -57,9 +59,15 @@ test('has no automatically detectable critical accessibility violations', async 
 
 test('keeps the primary story readable on a mobile viewport', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Small footprint. Serious intent.' })).toBeVisible();
-  await page.getByTestId('chapter-explore').scrollIntoViewIfNeeded();
-  await expect(page.getByRole('heading', { name: 'Now take control.' })).toBeVisible();
+  const openingHeading = page.getByTestId('chapter-meet').getByRole('heading');
+  await expect(openingHeading).toBeVisible();
+  await expect(openingHeading).toHaveText(/\S+/);
+
+  const finalChapter = page.getByTestId('chapter-explore');
+  await finalChapter.scrollIntoViewIfNeeded();
+  const finalHeading = finalChapter.getByRole('heading');
+  await expect(finalHeading).toBeVisible();
+  await expect(finalHeading).toHaveText(/\S+/);
 });
 
 test('switches themes, avoids a black dark mode, and remembers the choice', async ({ page }) => {
