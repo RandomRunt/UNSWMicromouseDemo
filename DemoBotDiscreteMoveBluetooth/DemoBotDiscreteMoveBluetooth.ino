@@ -1,4 +1,5 @@
 #include <Wire.h>
+#include <SoftwareSerial.h>
 #include <avr/pgmspace.h>
 
 #include "DualEncoder.hpp"
@@ -15,6 +16,9 @@ constexpr uint8_t LEFT_ENCODER_A = 2;
 constexpr uint8_t LEFT_ENCODER_B = 7;
 constexpr uint8_t RIGHT_ENCODER_A = 3;
 constexpr uint8_t RIGHT_ENCODER_B = 8;
+// HC-06: module TX -> D4, module RX <- D5 (use a divider on HC-06 RX).
+constexpr uint8_t BLUETOOTH_RX = 4;
+constexpr uint8_t BLUETOOTH_TX = 5;
 constexpr uint8_t LEFT_LIDAR_XSHUT = A0;
 constexpr uint8_t FRONT_LIDAR_XSHUT = A1;
 constexpr uint8_t RIGHT_LIDAR_XSHUT = A2;
@@ -105,6 +109,7 @@ struct Task42Move {
 
 Motor leftMotor(LEFT_MOTOR_PWM, LEFT_MOTOR_DIR);
 Motor rightMotor(RIGHT_MOTOR_PWM, RIGHT_MOTOR_DIR);
+SoftwareSerial bluetoothSerial(BLUETOOTH_RX, BLUETOOTH_TX);
 DualEncoder encoders(
     LEFT_ENCODER_A,
     LEFT_ENCODER_B,
@@ -119,6 +124,27 @@ uint8_t nextLidar = 0;
 float committedHeadingDeg = 0.0f;
 bool ready = false;
 bool routeRun = false;
+
+void reportBluetooth(
+    const __FlashStringHelper* event,
+    float target = 0.0f) {
+    bluetoothSerial.print(F("event="));
+    bluetoothSerial.print(event);
+    bluetoothSerial.print(F(",target="));
+    bluetoothSerial.print(target, 1);
+    bluetoothSerial.print(F(",heading="));
+    bluetoothSerial.print(imu.getYaw(), 1);
+    bluetoothSerial.print(F(",encL="));
+    bluetoothSerial.print(-encoders.leftRotation(), 2);
+    bluetoothSerial.print(F(",encR="));
+    bluetoothSerial.print(encoders.rightRotation(), 2);
+    bluetoothSerial.print(F(",lidarL="));
+    bluetoothSerial.print(leftLidar.getDistance(), 0);
+    bluetoothSerial.print(F(",lidarF="));
+    bluetoothSerial.print(frontLidar.getDistance(), 0);
+    bluetoothSerial.print(F(",lidarR="));
+    bluetoothSerial.println(rightLidar.getDistance(), 0);
+}
 
 char routeAt(uint16_t index) {
     if (index >= sizeof(ROUTE)) return '\0';
@@ -693,16 +719,19 @@ bool executeTask42Block(uint16_t& index) {
         // relative to the heading left by the preceding tuple.
         const float clockwiseAngleDeg =
             static_cast<float>(move.turnTenths) * 0.1f;
-        if (move.turnTenths != 0
-            && !turnTo(
-                committedHeadingDeg - clockwiseAngleDeg,
-                false)) {
-            return false;
+        if (move.turnTenths != 0) {
+            const float targetHeading =
+                committedHeadingDeg - clockwiseAngleDeg;
+            reportBluetooth(F("task42-turn-start"), targetHeading);
+            if (!turnTo(targetHeading, false)) return false;
+            reportBluetooth(F("task42-turn-done"), targetHeading);
         }
-        if (move.distanceTenths > 0
-            && !moveDeadReckoned(
-                static_cast<float>(move.distanceTenths) * 0.1f)) {
-            return false;
+        if (move.distanceTenths > 0) {
+            const float distanceMm =
+                static_cast<float>(move.distanceTenths) * 0.1f;
+            reportBluetooth(F("task42-forward-start"), distanceMm);
+            if (!moveDeadReckoned(distanceMm)) return false;
+            reportBluetooth(F("task42-forward-done"), distanceMm);
         }
 
         const char delimiter = routeAt(index);
@@ -731,16 +760,24 @@ bool runRoute() {
                 ++index;
             } while (routeAt(index) != '\0'
                      && tolower(routeAt(index)) == 'f');
-            if (!moveForward(static_cast<float>(cells) * CELL_DISTANCE_MM)) {
-                return false;
-            }
+            const float distanceMm =
+                static_cast<float>(cells) * CELL_DISTANCE_MM;
+            reportBluetooth(F("forward-start"), distanceMm);
+            if (!moveForward(distanceMm)) return false;
             settle(100);
+            reportBluetooth(F("forward-done"), distanceMm);
         } else if (command == 'l') {
             ++index;
-            if (!turnTo(committedHeadingDeg + 90.0f, true)) return false;
+            const float targetHeading = committedHeadingDeg + 90.0f;
+            reportBluetooth(F("left-start"), targetHeading);
+            if (!turnTo(targetHeading, true)) return false;
+            reportBluetooth(F("left-done"), targetHeading);
         } else if (command == 'r') {
             ++index;
-            if (!turnTo(committedHeadingDeg - 90.0f, true)) return false;
+            const float targetHeading = committedHeadingDeg - 90.0f;
+            reportBluetooth(F("right-start"), targetHeading);
+            if (!turnTo(targetHeading, true)) return false;
+            reportBluetooth(F("right-done"), targetHeading);
         } else if (command == ',') {
             ++index;
         } else if (command == '[') {
@@ -754,17 +791,24 @@ bool runRoute() {
 
 void setup() {
     Serial.begin(9600);
+    bluetoothSerial.begin(9600);
+    bluetoothSerial.println(F("DemoBot Bluetooth starting"));
     ready = initialiseHardware();
     if (!ready) {
         stopMotors();
         Serial.println(F("Hardware initialisation failed"));
+        bluetoothSerial.println(F("event=hardware-failed"));
+    } else {
+        reportBluetooth(F("hardware-ready"));
     }
 }
 
 void loop() {
     if (!ready || routeRun) return;
     routeRun = true;
+    reportBluetooth(F("route-start"));
     const bool success = runRoute();
     stopMotors();
     Serial.println(success ? F("Route complete") : F("Route failed"));
+    reportBluetooth(success ? F("route-complete") : F("route-failed"));
 }
