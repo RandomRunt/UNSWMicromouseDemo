@@ -1,5 +1,9 @@
 import type { ComponentDefinition, ComponentId } from '../types/showcase';
 
+// explodeOffset uses [X, Y, Z] in the original showcase orientation:
+// negative/positive X moves left/right, positive Y moves up, and negative Z
+// moves towards the robot's front. I tune one component at a time while viewing
+// chapter 02, then use motion.ts to adjust the overall amount per chapter.
 export const componentDefinitions: ComponentDefinition[] = [
   {
     id: 'chassis',
@@ -8,7 +12,7 @@ export const componentDefinitions: ComponentDefinition[] = [
     shortLabel: 'CHASSIS',
     description: 'The rigid mechanical frame that keeps the electronics, sensors, and wheel alignment repeatable.',
     accent: '#f2f0e8',
-    explodeOffset: [0, -0.22, 0],
+    explodeOffset: [0, 0, 0],
   },
   {
     id: 'bottom_pcb',
@@ -17,7 +21,7 @@ export const componentDefinitions: ComponentDefinition[] = [
     shortLabel: 'PCB LOW',
     description: 'Carries the lower-level power and drive hardware in the stacked electronics assembly.',
     accent: '#59c878',
-    explodeOffset: [0, 0.34, 0],
+    explodeOffset: [0, 0, 0],
   },
   {
     id: 'top_pcb',
@@ -26,7 +30,7 @@ export const componentDefinitions: ComponentDefinition[] = [
     shortLabel: 'PCB TOP',
     description: 'Supports the upper control, sensing, display, and interconnection hardware.',
     accent: '#45b86a',
-    explodeOffset: [0, 0.64, 0],
+    explodeOffset: [0, 0, 0],
   },
   {
     id: 'battery',
@@ -35,7 +39,7 @@ export const componentDefinitions: ComponentDefinition[] = [
     shortLabel: 'BATTERY',
     description: 'A low-mounted energy store that keeps the centre of gravity close to the track.',
     accent: '#d8ff65',
-    explodeOffset: [0, 0.22, 0.48],
+    explodeOffset: [0, 0, 0],
   },
   {
     id: 'power_switch',
@@ -44,7 +48,7 @@ export const componentDefinitions: ComponentDefinition[] = [
     shortLabel: 'SWITCH',
     description: 'Provides a deliberate physical disconnect between the battery and robot electronics.',
     accent: '#ffb800',
-    explodeOffset: [0.52, 0.42, 0.58],
+    explodeOffset: [0, 0, 0],
   },
   {
     id: 'microcontroller',
@@ -53,7 +57,7 @@ export const componentDefinitions: ComponentDefinition[] = [
     shortLabel: 'MCU',
     description: 'Runs sensing, pose estimation, path following, and the motor control loop.',
     accent: '#ffb800',
-    explodeOffset: [-0.24, 0.92, 0.08],
+    explodeOffset: [0, 0.22, 0],
   },
   {
     id: 'imu',
@@ -62,7 +66,7 @@ export const componentDefinitions: ComponentDefinition[] = [
     shortLabel: 'IMU',
     description: 'Measures angular motion so the estimated heading stays stable through fast turns.',
     accent: '#9edcff',
-    explodeOffset: [0.42, 0.92, 0.04],
+    explodeOffset: [0, 0.22, 0],
   },
   {
     id: 'tof_left',
@@ -71,7 +75,7 @@ export const componentDefinitions: ComponentDefinition[] = [
     shortLabel: 'TOF +90',
     description: 'Measures the wall to the robot\'s left along the positive ninety-degree axis.',
     accent: '#45e6ff',
-    explodeOffset: [-0.82, 0.52, -0.2],
+    explodeOffset: [-0.82, 0, -0.2],
   },
   {
     id: 'tof_front',
@@ -80,7 +84,7 @@ export const componentDefinitions: ComponentDefinition[] = [
     shortLabel: 'TOF 0',
     description: 'Measures the wall directly ahead along the robot\'s zero-degree forward axis.',
     accent: '#45e6ff',
-    explodeOffset: [0, 0.52, -0.78],
+    explodeOffset: [0, 0, -0.78],
   },
   {
     id: 'tof_right',
@@ -89,7 +93,7 @@ export const componentDefinitions: ComponentDefinition[] = [
     shortLabel: 'TOF -90',
     description: 'Measures the wall to the robot\'s right along the negative ninety-degree axis.',
     accent: '#45e6ff',
-    explodeOffset: [0.82, 0.52, -0.2],
+    explodeOffset: [0.82, 0, -0.2],
   },
   {
     id: 'oled_display',
@@ -98,7 +102,7 @@ export const componentDefinitions: ComponentDefinition[] = [
     shortLabel: 'OLED',
     description: 'Shows live robot status, sensor readings, and diagnostic information during operation.',
     accent: '#70b7ff',
-    explodeOffset: [0, 0.86, 0.52],
+    explodeOffset: [0, 0.22, 0],
   },
   {
     id: 'motor_driver',
@@ -107,7 +111,7 @@ export const componentDefinitions: ComponentDefinition[] = [
     shortLabel: 'DRIVER',
     description: 'Converts low-power control signals into bidirectional current for both drive motors.',
     accent: '#ff7a45',
-    explodeOffset: [0.48, 0.68, 0.24],
+    explodeOffset: [0, 0, 0],
   },
   {
     id: 'motor_left',
@@ -116,7 +120,7 @@ export const componentDefinitions: ComponentDefinition[] = [
     shortLabel: 'MOTOR L',
     description: 'A compact geared drive independently controlled for turning and acceleration.',
     accent: '#ff7a45',
-    explodeOffset: [-0.62, 0.05, 0.12],
+    explodeOffset: [-0.72, -0.2, 0.12],
   },
   {
     id: 'motor_right',
@@ -125,7 +129,7 @@ export const componentDefinitions: ComponentDefinition[] = [
     shortLabel: 'MOTOR R',
     description: 'Pairs with the left motor for differential steering through the maze.',
     accent: '#ff7a45',
-    explodeOffset: [0.62, 0.05, 0.12],
+    explodeOffset: [0.72, -0.2, 0.12],
   },
   {
     id: 'encoder_left',
@@ -134,7 +138,7 @@ export const componentDefinitions: ComponentDefinition[] = [
     shortLabel: 'ENC L',
     description: 'Counts left wheel rotation for distance, velocity, and pose estimation.',
     accent: '#d8ff65',
-    explodeOffset: [-0.72, 0.15, 0.25],
+    explodeOffset: [-0.62, -0.2, 0.12],
   },
   {
     id: 'encoder_right',
@@ -143,7 +147,7 @@ export const componentDefinitions: ComponentDefinition[] = [
     shortLabel: 'ENC R',
     description: 'Counts right wheel rotation and exposes mismatch between commanded and actual motion.',
     accent: '#d8ff65',
-    explodeOffset: [0.72, 0.15, 0.25],
+    explodeOffset: [0.62, -0.2, 0.12],
   },
   {
     id: 'wheel_left',
@@ -152,7 +156,7 @@ export const componentDefinitions: ComponentDefinition[] = [
     shortLabel: 'WHEEL L',
     description: 'A high-grip contact patch that turns precise motor motion into track speed.',
     accent: '#f2f0e8',
-    explodeOffset: [-0.92, 0, 0.06],
+    explodeOffset: [-1.02, -0.2, 0.06],
   },
   {
     id: 'wheel_right',
@@ -161,7 +165,7 @@ export const componentDefinitions: ComponentDefinition[] = [
     shortLabel: 'WHEEL R',
     description: 'The right-side drive contact, independently accelerated for differential steering.',
     accent: '#f2f0e8',
-    explodeOffset: [0.92, 0, 0.06],
+    explodeOffset: [1.02, -0.2, 0.06],
   },
   {
     id: 'ball_caster_front',
@@ -170,7 +174,7 @@ export const componentDefinitions: ComponentDefinition[] = [
     shortLabel: 'CASTER F',
     description: 'A low-friction metal support that stabilises the chassis ahead of the drive axle.',
     accent: '#d7dadd',
-    explodeOffset: [0, -0.2, -0.62],
+    explodeOffset: [0, -0.4, 0],
   },
   {
     id: 'ball_caster_rear',
@@ -179,7 +183,7 @@ export const componentDefinitions: ComponentDefinition[] = [
     shortLabel: 'CASTER R',
     description: 'A second metal support that keeps the chassis level behind the drive axle.',
     accent: '#d7dadd',
-    explodeOffset: [0, -0.2, 0.62],
+    explodeOffset: [0, -0.4, 0],
   },
 ];
 

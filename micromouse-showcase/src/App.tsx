@@ -15,6 +15,7 @@ function App() {
   const reducedMotion = useReducedMotion();
   const [selected, setSelected] = useState<ComponentId | null>(null);
   const [isInspecting, setIsInspecting] = useState(false);
+  const [explorationExploded, setExplorationExploded] = useState(false);
   const inspectionIdleTimerRef = useRef<number | null>(null);
   const componentAnchorRef = useRef<ComponentScreenAnchor | null>(null);
   const [assetAvailable, setAssetAvailable] = useState(false);
@@ -51,6 +52,11 @@ function App() {
     setIsInspecting(false);
   }, [isAtBottom]);
 
+  useEffect(() => {
+    // Do not carry the optional chapter 06 teardown into another chapter.
+    if (activeChapter !== chapters.length - 1) setExplorationExploded(false);
+  }, [activeChapter]);
+
   useEffect(() => () => {
     if (inspectionIdleTimerRef.current !== null) {
       window.clearTimeout(inspectionIdleTimerRef.current);
@@ -59,6 +65,7 @@ function App() {
 
   const restartTour = useCallback(() => {
     setSelected(null);
+    setExplorationExploded(false);
     componentAnchorRef.current = null;
     window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' });
   }, [reducedMotion]);
@@ -94,6 +101,7 @@ function App() {
         progress={progress}
         activeChapter={activeChapter}
         explorationEnabled={isAtBottom}
+        explorationExploded={explorationExploded}
         selected={selected}
         onSelect={selectComponent}
         onClearSelection={clearComponent}
@@ -111,6 +119,8 @@ function App() {
         assetAvailable={assetAvailable}
         onSelect={selectComponent}
         onRestart={restartTour}
+        explorationExploded={explorationExploded}
+        onToggleExploded={() => setExplorationExploded((current) => !current)}
         theme={theme}
         onToggleTheme={() => setTheme((current) => current === 'dark' ? 'light' : 'dark')}
       />

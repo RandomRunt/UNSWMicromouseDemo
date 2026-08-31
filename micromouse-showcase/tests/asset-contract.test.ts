@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { componentDefinitions, requiredMeshNames } from '../src/config/components';
+import { getExplodeAmount } from '../src/scene/motion';
 
 describe('Micromouse model contract', () => {
   it('uses unique lowercase ASCII mesh names', () => {
@@ -15,5 +16,9 @@ describe('Micromouse model contract', () => {
       expect(component.description.length).toBeGreaterThan(24);
       expect(component.explodeOffset).toHaveLength(3);
     });
+  });
+
+  it('only explodes automatically during chapter 02', () => {
+    expect([0, 1, 2, 3, 4, 5].map(getExplodeAmount)).toEqual([0, 1, 0, 0, 0, 0]);
   });
 });

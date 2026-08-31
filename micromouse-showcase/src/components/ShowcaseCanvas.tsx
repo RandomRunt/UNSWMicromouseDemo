@@ -15,6 +15,7 @@ interface ShowcaseCanvasProps {
   progress: number;
   activeChapter: number;
   explorationEnabled: boolean;
+  explorationExploded: boolean;
   selected: ComponentId | null;
   onSelect: (id: ComponentId) => void;
   onClearSelection: () => void;
@@ -30,6 +31,7 @@ export function ShowcaseCanvas({
   progress,
   activeChapter,
   explorationEnabled,
+  explorationExploded,
   selected,
   onSelect,
   onClearSelection,
@@ -40,6 +42,11 @@ export function ShowcaseCanvas({
   theme,
   componentAnchorRef,
 }: ShowcaseCanvasProps) {
+  // Chapter 06 stays assembled by default. Its button temporarily gives only
+  // the robot model chapter 02's full teardown amount; the camera, maze and
+  // sensor effects still receive the real active chapter.
+  const modelChapter = activeChapter === 5 && explorationExploded ? 1 : activeChapter;
+
   return (
     <div
       className="canvas-shell"
@@ -66,20 +73,24 @@ export function ShowcaseCanvas({
         <Suspense fallback={<SceneLoader />}>
           {assetAvailable ? (
             <GLBMicromouse
-              activeChapter={activeChapter}
+              activeChapter={modelChapter}
               selected={selected}
               onSelect={onSelect}
               reducedMotion={reducedMotion}
             />
           ) : (
             <ProceduralMicromouse
-              activeChapter={activeChapter}
+              activeChapter={modelChapter}
               selected={selected}
               onSelect={onSelect}
               reducedMotion={reducedMotion}
             />
           )}
-          <SensorBeams activeChapter={activeChapter} reducedMotion={reducedMotion} />
+          <SensorBeams
+            activeChapter={activeChapter}
+            reducedMotion={reducedMotion}
+            assetAvailable={assetAvailable}
+          />
           <MazeDemo activeChapter={activeChapter} reducedMotion={reducedMotion} />
           <ComponentAnchorTracker selected={selected} anchorRef={componentAnchorRef} />
         </Suspense>
