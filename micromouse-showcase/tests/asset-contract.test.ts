@@ -9,7 +9,7 @@ describe('Micromouse model contract', () => {
   });
 
   it('defines presentation behavior for every interactive component', () => {
-    expect(componentDefinitions).toHaveLength(14);
+    expect(componentDefinitions).toHaveLength(20);
     componentDefinitions.forEach((component) => {
       expect(component.title.length).toBeGreaterThan(2);
       expect(component.description.length).toBeGreaterThan(24);

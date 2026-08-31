@@ -106,10 +106,6 @@ export function ProceduralMicromouse({ activeChapter, selected, onSelect, reduce
           <boxGeometry args={[2.05, 0.16, 2.35]} />
           <meshStandardMaterial color="#161c1f" roughness={0.32} metalness={0.72} />
         </mesh>
-        <mesh position={[0, 0.12, 0.1]} castShadow>
-          <boxGeometry args={[1.72, 0.08, 2.02]} />
-          <meshStandardMaterial color="#343e40" roughness={0.7} metalness={0.48} />
-        </mesh>
         {[-0.74, 0.74].flatMap((x) => [-0.86, 0.86].map((z) => (
           <mesh key={`${x}-${z}`} position={[x, 0.22, z]} castShadow>
             <cylinderGeometry args={[0.065, 0.065, 0.17, 12]} />
@@ -118,10 +114,24 @@ export function ProceduralMicromouse({ activeChapter, selected, onSelect, reduce
         )))}
       </Part>
 
-      <Part id="controller" activeChapter={activeChapter} selected={selected} onSelect={onSelect} position={[0, 0.54, 0]}>
+      <Part id="bottom_pcb" activeChapter={activeChapter} selected={selected} onSelect={onSelect} position={[0, 0.32, 0.1]}>
+        <mesh castShadow>
+          <boxGeometry args={[1.72, 0.08, 2.02]} />
+          <CircuitMaterial color="#397d4a" selected={selected === 'bottom_pcb'} />
+        </mesh>
+      </Part>
+
+      <Part id="top_pcb" activeChapter={activeChapter} selected={selected} onSelect={onSelect} position={[0, 0.74, 0.05]}>
+        <mesh castShadow>
+          <boxGeometry args={[1.78, 0.06, 1.88]} />
+          <CircuitMaterial color="#438d51" selected={selected === 'top_pcb'} />
+        </mesh>
+      </Part>
+
+      <Part id="microcontroller" activeChapter={activeChapter} selected={selected} onSelect={onSelect} position={[-0.28, 0.88, -0.2]}>
         <mesh castShadow>
           <boxGeometry args={[1.12, 0.1, 1.05]} />
-          <CircuitMaterial selected={selected === 'controller'} />
+          <CircuitMaterial selected={selected === 'microcontroller'} />
         </mesh>
         <mesh position={[0, 0.095, 0]} castShadow>
           <boxGeometry args={[0.42, 0.09, 0.38]} />
@@ -135,7 +145,7 @@ export function ProceduralMicromouse({ activeChapter, selected, onSelect, reduce
         ))}
       </Part>
 
-      <Part id="motor_driver" activeChapter={activeChapter} selected={selected} onSelect={onSelect} position={[0, 0.38, 0.64]}>
+      <Part id="motor_driver" activeChapter={activeChapter} selected={selected} onSelect={onSelect} position={[0.42, 0.87, 0.42]}>
         <mesh castShadow>
           <boxGeometry args={[0.82, 0.09, 0.48]} />
           <CircuitMaterial color="#2f383b" selected={selected === 'motor_driver'} />
@@ -165,6 +175,22 @@ export function ProceduralMicromouse({ activeChapter, selected, onSelect, reduce
         </mesh>
       </Part>
 
+      <Part id="power_switch" activeChapter={activeChapter} selected={selected} onSelect={onSelect} position={[0.63, 0.55, 0.72]}>
+        <mesh castShadow>
+          <boxGeometry args={[0.28, 0.2, 0.34]} />
+          <meshStandardMaterial
+            color="#b7352d"
+            roughness={0.42}
+            emissive={selected === 'power_switch' ? '#ffb800' : '#000000'}
+            emissiveIntensity={0.5}
+          />
+        </mesh>
+        <mesh position={[0, 0.15, 0]} rotation={[0, 0, -0.35]} castShadow>
+          <boxGeometry args={[0.09, 0.22, 0.09]} />
+          <meshStandardMaterial color="#d8d9d5" metalness={0.75} roughness={0.25} />
+        </mesh>
+      </Part>
+
       <Part id="imu" activeChapter={activeChapter} selected={selected} onSelect={onSelect} position={[0.34, 0.66, 0.08]}>
         <mesh castShadow>
           <boxGeometry args={[0.28, 0.07, 0.28]} />
@@ -176,7 +202,7 @@ export function ProceduralMicromouse({ activeChapter, selected, onSelect, reduce
         </mesh>
       </Part>
 
-      <Part id="lidar_front" activeChapter={activeChapter} selected={selected} onSelect={onSelect} position={[0, 0.42, -1.12]}>
+      <Part id="tof_front" activeChapter={activeChapter} selected={selected} onSelect={onSelect} position={[0, 0.42, -1.12]}>
         <mesh castShadow>
           <boxGeometry args={[0.36, 0.25, 0.18]} />
           <meshStandardMaterial color="#20282b" metalness={0.55} roughness={0.34} />
@@ -187,17 +213,28 @@ export function ProceduralMicromouse({ activeChapter, selected, onSelect, reduce
         </mesh>
       </Part>
 
-      <Part id="lidar_left" activeChapter={activeChapter} selected={selected} onSelect={onSelect} position={[-0.93, 0.4, -0.72]} rotation={[0, -0.55, 0]}>
+      <Part id="tof_left" activeChapter={activeChapter} selected={selected} onSelect={onSelect} position={[-0.93, 0.4, -0.72]} rotation={[0, -Math.PI / 2, 0]}>
         <mesh castShadow>
           <boxGeometry args={[0.2, 0.23, 0.32]} />
           <meshStandardMaterial color="#20282b" metalness={0.55} roughness={0.34} />
         </mesh>
       </Part>
 
-      <Part id="lidar_right" activeChapter={activeChapter} selected={selected} onSelect={onSelect} position={[0.93, 0.4, -0.72]} rotation={[0, 0.55, 0]}>
+      <Part id="tof_right" activeChapter={activeChapter} selected={selected} onSelect={onSelect} position={[0.93, 0.4, -0.72]} rotation={[0, Math.PI / 2, 0]}>
         <mesh castShadow>
           <boxGeometry args={[0.2, 0.23, 0.32]} />
           <meshStandardMaterial color="#20282b" metalness={0.55} roughness={0.34} />
+        </mesh>
+      </Part>
+
+      <Part id="oled_display" activeChapter={activeChapter} selected={selected} onSelect={onSelect} position={[0, 0.91, 0.58]} rotation={[-0.12, 0, 0]}>
+        <mesh castShadow>
+          <boxGeometry args={[0.72, 0.08, 0.42]} />
+          <CircuitMaterial color="#173f57" selected={selected === 'oled_display'} />
+        </mesh>
+        <mesh position={[0, 0.046, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[0.56, 0.27]} />
+          <meshBasicMaterial color="#70b7ff" />
         </mesh>
       </Part>
 
@@ -234,10 +271,18 @@ export function ProceduralMicromouse({ activeChapter, selected, onSelect, reduce
         );
       })}
 
-      <mesh name="top_plate" position={[0, 0.77, 0.05]} castShadow>
-        <boxGeometry args={[1.78, 0.055, 1.88]} />
-        <meshPhysicalMaterial color="#8d9ba0" transparent opacity={0.22} roughness={0.18} metalness={0.25} transmission={0.12} />
-      </mesh>
+      {(['front', 'rear'] as const).map((end) => {
+        const id: ComponentId = end === 'front' ? 'ball_caster_front' : 'ball_caster_rear';
+        const z = end === 'front' ? -0.83 : 1.05;
+        return (
+          <Part key={end} id={id} activeChapter={activeChapter} selected={selected} onSelect={onSelect} position={[0, -0.06, z]}>
+            <mesh castShadow>
+              <sphereGeometry args={[0.2, 20, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
+              <meshStandardMaterial color="#c9cccf" metalness={0.9} roughness={0.2} />
+            </mesh>
+          </Part>
+        );
+      })}
     </group>
   );
 }

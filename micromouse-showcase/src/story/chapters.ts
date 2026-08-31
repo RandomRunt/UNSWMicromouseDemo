@@ -16,7 +16,7 @@ export const chapters: StoryChapter[] = [
     eyebrow: 'Exploded architecture',
     title: 'Custom Robot for Teaching.',
     body: 'Sensors, power, drive, and control hardware are connected with custom PCBs held together in a student-designed chassis. Select any part to inspect it.',
-    metric: '14',
+    metric: '20',
     metricLabel: 'key systems',
   },
   {

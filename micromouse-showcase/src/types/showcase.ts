@@ -8,19 +8,25 @@ export type ChapterId =
 
 export type ComponentId =
   | 'chassis'
-  | 'controller'
-  | 'motor_driver'
+  | 'bottom_pcb'
+  | 'top_pcb'
   | 'battery'
+  | 'power_switch'
+  | 'microcontroller'
   | 'imu'
-  | 'lidar_left'
-  | 'lidar_front'
-  | 'lidar_right'
+  | 'tof_left'
+  | 'tof_front'
+  | 'tof_right'
+  | 'oled_display'
+  | 'motor_driver'
   | 'motor_left'
   | 'motor_right'
+  | 'encoder_left'
+  | 'encoder_right'
   | 'wheel_left'
   | 'wheel_right'
-  | 'encoder_left'
-  | 'encoder_right';
+  | 'ball_caster_front'
+  | 'ball_caster_rear';
 
 export interface StoryChapter {
   id: ChapterId;
