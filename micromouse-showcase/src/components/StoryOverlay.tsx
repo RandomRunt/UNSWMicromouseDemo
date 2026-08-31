@@ -29,13 +29,13 @@ export function StoryOverlay({
           <span className="brand__mark" aria-hidden="true">M</span>
           <span>
             <strong>MICROMOUSE</strong>
-            <small>UNSW // DEMO DAY</small>
+            <small>UNSW // ROBOTICS</small>
           </span>
         </a>
 
         <div className="topbar__status" aria-label="Showcase system status">
           <span className="status-dot" aria-hidden="true" />
-          <span>{assetAvailable ? 'DIGITAL TWIN ONLINE' : 'PROCEDURAL TWIN ONLINE'}</span>
+          <span>{assetAvailable ? 'DIGITAL TWIN ONLINE' : 'MICROMOUSE VISUALISATION'}</span>
         </div>
 
         <div className="topbar__actions">
@@ -89,6 +89,7 @@ export function StoryOverlay({
                 type="button"
                 key={component.id}
                 className={selected === component.id ? 'is-selected' : ''}
+                data-component-trigger
                 onClick={() => onSelect(component.id)}
                 aria-pressed={selected === component.id}
               >
