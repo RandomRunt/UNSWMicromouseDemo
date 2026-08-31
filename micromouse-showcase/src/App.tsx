@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ComponentLabel } from './components/ComponentLabel';
 import { ShowcaseCanvas } from './components/ShowcaseCanvas';
 import { StoryOverlay } from './components/StoryOverlay';
+import { MICROMOUSE_MODEL_URL } from './config/assets';
 import { chapters } from './story/chapters';
 import { useKioskReset } from './story/useKioskReset';
 import { useReducedMotion } from './story/useReducedMotion';
@@ -15,6 +16,7 @@ function App() {
   const reducedMotion = useReducedMotion();
   const [selected, setSelected] = useState<ComponentId | null>(null);
   const [isInspecting, setIsInspecting] = useState(false);
+  const [explorationExploded, setExplorationExploded] = useState(false);
   const inspectionIdleTimerRef = useRef<number | null>(null);
   const componentAnchorRef = useRef<ComponentScreenAnchor | null>(null);
   const [assetAvailable, setAssetAvailable] = useState(false);
@@ -32,7 +34,7 @@ function App() {
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch('/models/micromouse.glb', { method: 'HEAD', cache: 'no-store', signal: controller.signal })
+    fetch(MICROMOUSE_MODEL_URL, { method: 'HEAD', cache: 'no-store', signal: controller.signal })
       .then((response) => {
         const type = response.headers.get('content-type') ?? '';
         setAssetAvailable(response.ok && !type.includes('text/html'));
@@ -51,6 +53,11 @@ function App() {
     setIsInspecting(false);
   }, [isAtBottom]);
 
+  useEffect(() => {
+    // Do not carry the optional chapter 06 teardown into another chapter.
+    if (activeChapter !== chapters.length - 1) setExplorationExploded(false);
+  }, [activeChapter]);
+
   useEffect(() => () => {
     if (inspectionIdleTimerRef.current !== null) {
       window.clearTimeout(inspectionIdleTimerRef.current);
@@ -59,6 +66,7 @@ function App() {
 
   const restartTour = useCallback(() => {
     setSelected(null);
+    setExplorationExploded(false);
     componentAnchorRef.current = null;
     window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' });
   }, [reducedMotion]);
@@ -94,6 +102,7 @@ function App() {
         progress={progress}
         activeChapter={activeChapter}
         explorationEnabled={isAtBottom}
+        explorationExploded={explorationExploded}
         selected={selected}
         onSelect={selectComponent}
         onClearSelection={clearComponent}
@@ -111,6 +120,8 @@ function App() {
         assetAvailable={assetAvailable}
         onSelect={selectComponent}
         onRestart={restartTour}
+        explorationExploded={explorationExploded}
+        onToggleExploded={() => setExplorationExploded((current) => !current)}
         theme={theme}
         onToggleTheme={() => setTheme((current) => current === 'dark' ? 'light' : 'dark')}
       />

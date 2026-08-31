@@ -101,22 +101,30 @@ Before exporting, make the assembly easy to understand:
 Important interactive parts should include, where present:
 
 ```text
-chassis
-top_plate
-controller
-motor_driver
-battery
-imu
-lidar_left
-lidar_front
-lidar_right
-motor_left
-motor_right
-wheel_left
-wheel_right
-encoder_left
-encoder_right
+mouse_root
+|-- chassis
+|-- bottom_pcb
+|-- top_pcb
+|-- battery
+|-- power_switch
+|-- microcontroller
+|-- imu
+|-- tof_left
+|-- tof_front
+|-- tof_right
+|-- oled_display
+|-- motor_driver
+|-- motor_left
+|-- motor_right
+|-- encoder_left
+|-- encoder_right
+|-- wheel_left
+|-- wheel_right
+|-- ball_caster_front
+`-- ball_caster_rear
 ```
+
+The three ToF names encode their viewing directions: left is `+90` degrees, front is `0` degrees, and right is `-90` degrees. The caster names assume the two supports sit fore and aft of the drive axle.
 
 ### 1.3 Remove unnecessary complexity
 
@@ -140,7 +148,7 @@ Suggested categories:
 | Component | Fusion appearance goal |
 |---|---|
 | Chassis and brackets | Approximate aluminium, printed plastic, or real chassis colour |
-| PCB/controller | Representative PCB green or actual solder-mask colour |
+| PCBs and controller modules | Representative PCB green or actual solder-mask colour |
 | LiDAR and IMU housings | Dark plastic or actual housing colour |
 | Motors and shafts | Metallic grey |
 | Wheels | Near-black rubber |
@@ -179,7 +187,7 @@ Perform a test export early. Do not spend hours polishing Fusion materials befor
 
 Import the test FBX into Blender and answer:
 
-- Are the chassis, wheels, motors, sensors, controller, and battery separately selectable?
+- Are the chassis, PCBs, wheels, motors, sensors, microcontroller, display, and battery separately selectable?
 - Are they still correctly positioned?
 - Did useful component names survive?
 - Is the physical scale recoverable and correct?
@@ -206,15 +214,25 @@ Example:
 ```text
 cad/source/parts/
 |-- chassis.obj
-|-- controller.obj
+|-- bottom_pcb.obj
+|-- top_pcb.obj
 |-- battery.obj
-|-- lidar_left.obj
-|-- lidar_front.obj
-|-- lidar_right.obj
+|-- power_switch.obj
+|-- microcontroller.obj
+|-- imu.obj
+|-- tof_left.obj
+|-- tof_front.obj
+|-- tof_right.obj
+|-- oled_display.obj
+|-- motor_driver.obj
 |-- motor_left.obj
 |-- motor_right.obj
 |-- wheel_left.obj
-`-- wheel_right.obj
+|-- wheel_right.obj
+|-- encoder_left.obj
+|-- encoder_right.obj
+|-- ball_caster_front.obj
+`-- ball_caster_rear.obj
 ```
 
 OBJ is a fallback because it may lose hierarchy and material behavior. Separate files nevertheless guarantee that the interactive components can remain independent in Blender.
@@ -245,7 +263,7 @@ cad/blender/micromouse-working.blend
 Every component that the visitor can select must be a distinct Blender object. Rename the final objects using lowercase names and underscores:
 
 ```text
-lidar_front
+tof_front
 wheel_left
 motor_right
 ```

@@ -9,6 +9,8 @@ interface StoryOverlayProps {
   assetAvailable: boolean;
   onSelect: (id: ComponentId) => void;
   onRestart: () => void;
+  explorationExploded: boolean;
+  onToggleExploded: () => void;
   theme: ThemeMode;
   onToggleTheme: () => void;
 }
@@ -19,6 +21,8 @@ export function StoryOverlay({
   assetAvailable,
   onSelect,
   onRestart,
+  explorationExploded,
+  onToggleExploded,
   theme,
   onToggleTheme,
 }: StoryOverlayProps) {
@@ -78,6 +82,18 @@ export function StoryOverlay({
             </div>
           ))}
         </div>
+      )}
+
+      {activeChapter === chapters.length - 1 && (
+        <button
+          className="explode-toggle"
+          type="button"
+          onClick={onToggleExploded}
+          aria-pressed={explorationExploded}
+        >
+          <span aria-hidden="true">06 //</span>
+          {explorationExploded ? 'Assemble robot' : 'Explode robot'}
+        </button>
       )}
 
       {activeChapter >= 1 && (

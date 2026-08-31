@@ -10,6 +10,9 @@ interface CameraRigProps {
   reducedMotion: boolean;
 }
 
+// One [X, Y, Z] camera position per story chapter. I adjust these when a
+// chapter needs a clearer view: X moves sideways, Y changes height, and Z
+// changes front/back distance. Larger overall values usually zoom out.
 const cameraKeyframes: Array<[number, number, number]> = [
   [4.5, 2.8, 5.4],
   [4.2, 3.4, 4.5],
@@ -26,6 +29,7 @@ export function CameraRig({
   reducedMotion,
 }: CameraRigProps) {
   const { camera } = useThree();
+  // All guided camera views look at this point. Raising Y aims higher on the robot.
   const target = useMemo(() => new THREE.Vector3(0, 0.35, 0), []);
   const desired = useMemo(() => new THREE.Vector3(), []);
   const isUsingControlsRef = useRef(false);
@@ -59,6 +63,7 @@ export function CameraRig({
       THREE.MathUtils.lerp(from[1], to[1], local),
       THREE.MathUtils.lerp(from[2], to[2], local),
     );
+    // 3.8 controls guided camera transition speed; a larger value settles faster.
     camera.position.lerp(desired, 1 - Math.exp(-delta * (reducedMotion ? 18 : 3.8)));
     camera.lookAt(target);
   });
@@ -67,11 +72,14 @@ export function CameraRig({
     <OrbitControls
       enabled={explorationEnabled}
       enablePan={false}
-      minDistance={3.2}
+      // These are the closest/furthest zoom distances allowed in free inspection.
+      minDistance={2}
       maxDistance={9}
-      minPolarAngle={0.45}
-      maxPolarAngle={1.45}
-      target={[0, 0.35, 0]}
+      // Polar angles limit how far visitors can orbit over or under the robot.
+      minPolarAngle={0.15}
+      maxPolarAngle={2.75}
+      // Keep this close to the guided target above so the handover feels natural.
+      target={[0, 0.2, 0]}
       onStart={handleControlStart}
       onChange={handleControlChange}
       onEnd={handleControlEnd}

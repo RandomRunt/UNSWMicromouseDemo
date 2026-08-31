@@ -29,7 +29,7 @@ test('supports keyboard-accessible component inspection', async ({ page }) => {
   await controllerButton.focus();
   await page.keyboard.press('Enter');
 
-  await expect(page.getByTestId('component-detail')).toContainText('Controller');
+  await expect(page.getByTestId('component-detail')).toContainText('Microcontroller');
   await expect(controllerButton).toHaveAttribute('aria-pressed', 'true');
 });
 
