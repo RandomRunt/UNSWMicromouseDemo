@@ -3,6 +3,7 @@ import { ThreeEvent, useFrame } from '@react-three/fiber';
 import { ReactNode, useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { componentById, componentDefinitions } from '../config/components';
+import { MICROMOUSE_MODEL_URL } from '../config/assets';
 import type { ComponentId } from '../types/showcase';
 import { getExplodeAmount } from './motion';
 
@@ -333,7 +334,7 @@ export function ProceduralMicromouse({ activeChapter, selected, onSelect, reduce
 }
 
 export function GLBMicromouse({ activeChapter, selected, onSelect, reducedMotion }: MicromouseProps) {
-  const gltf = useGLTF('/models/micromouse.glb');
+  const gltf = useGLTF(MICROMOUSE_MODEL_URL);
   const root = useRef<THREE.Group>(null);
   const explodeScratch = useMemo(() => ({
     parentToShowcase: new THREE.Matrix4(),

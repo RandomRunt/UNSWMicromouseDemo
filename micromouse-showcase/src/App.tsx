@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ComponentLabel } from './components/ComponentLabel';
 import { ShowcaseCanvas } from './components/ShowcaseCanvas';
 import { StoryOverlay } from './components/StoryOverlay';
+import { MICROMOUSE_MODEL_URL } from './config/assets';
 import { chapters } from './story/chapters';
 import { useKioskReset } from './story/useKioskReset';
 import { useReducedMotion } from './story/useReducedMotion';
@@ -33,7 +34,7 @@ function App() {
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch('/models/micromouse.glb', { method: 'HEAD', cache: 'no-store', signal: controller.signal })
+    fetch(MICROMOUSE_MODEL_URL, { method: 'HEAD', cache: 'no-store', signal: controller.signal })
       .then((response) => {
         const type = response.headers.get('content-type') ?? '';
         setAssetAvailable(response.ok && !type.includes('text/html'));
