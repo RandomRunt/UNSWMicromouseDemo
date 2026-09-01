@@ -18,7 +18,7 @@ struct Waypoint {
 // The default string reproduces A's original checked-in waypoint route. It is
 // stored in flash so editing it does not use additional SRAM.
 // const char ROUTE_COMMANDS[] PROGMEM = "flflfrfrflflfrfflfrflflfflfrfrflflfrfrffrfffff"; // Left side of maze
-const char ROUTE_COMMANDS[] PROGMEM = "frfrflflfrfrflffrflfrfrffrflflfrfrflflfflfffff"; // Right side of maze
+const char ROUTE_COMMANDS[] PROGMEM = "frflfrflfrfrflflfrfrflffrflfrfrffrflflfrfrflffrf"; // Right side of maze
 
 constexpr float CELL_SIZE_M = 0.180f;
 constexpr float INITIAL_HEADING_RAD = -1.5708f;

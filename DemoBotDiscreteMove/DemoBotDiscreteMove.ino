@@ -94,9 +94,12 @@ constexpr uint8_t TASK42_RECALIBRATION_ATTEMPTS = 3;
 // forward millimetres); negative angles turn left. Commas separate modes.
 // const char ROUTE[] PROGMEM = "fr,[(58.1,287.4),(-3.9,116.7),(-64.3,377.6),],fl";
 // const char ROUTE[] PROGMEM = "frfflflfflfflflfrfrfrffrffrfrfrlflflfflflfrfrfrffrfrflfrf";
-const char ROUTE[] PROGMEM = "flflfrfrflflfrfflfrflflfflfrfrflflfrfrffrfffff"; // Left side of maze
+// const char ROUTE[] PROGMEM = "flflfrfrflflfrfflfrflflfflfrfrflflfrfrffrfffff"; // Left side of maze
 // const char ROUTE[] PROGMEM = "frfrflflfrfrflffrflfrfrffrflflfrfrflflfflfffff"; // Right side of maze
 
+// Robotics@UNSW showcase
+const char ROUTE[] PROGMEM = "frflfrflfrfrflflfrfrflffrflfrfrffrflflfrfrflffrffrfrflflfrfrflffrflfrfrffrflflfrfrflffrffrfrflflfrfrflffrflfrfrffrflflfrfrflffrffrfrflflfrfrflffrflfrfrffrflflfrfrflffrffrfrflflfrfrflffrflfrfrffrflflfrfrflffrffrfrflflfrfrflffrflfrfrffrflflfrfrflffrffrfrflflfrfrflffrflfrfrffrflflfrfrflffrffrfrflflfrfrflffrflfrfrffrflflfrfrflffrffrfrflflfrfrflffrflfrfrffrflflfrfrflffrf"; // infiniteish loop
+// const char ROUTE[] PROGMEM = "frflfrflfrfrflflfrfrflffrflfrfrffrflflfrfrflffrf"; // 1 loop of the maze
 
 struct Task42Move {
     int16_t turnTenths;
