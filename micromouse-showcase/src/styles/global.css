@@ -413,7 +413,8 @@ button {
 }
 
 .restart-button,
-.theme-button {
+.theme-button,
+.auto-scroll-button {
   justify-self: end;
   padding: 0.7rem 0.85rem;
   border: 1px solid var(--line);
@@ -428,10 +429,23 @@ button {
 }
 
 .restart-button:hover,
-.theme-button:hover {
+.theme-button:hover,
+.auto-scroll-button:hover {
   color: var(--accent-ink);
   border-color: var(--amber);
   background: var(--amber);
+}
+
+.auto-scroll-button {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.auto-scroll-button[aria-pressed="true"] {
+  color: var(--accent-ink);
+  border-color: var(--lime);
+  background: var(--lime);
 }
 
 .theme-button {
@@ -934,6 +948,14 @@ button {
     display: none;
   }
 
+  .auto-scroll-button {
+    padding: 0.62rem;
+  }
+
+  .auto-scroll-button > span:last-child {
+    display: none;
+  }
+
   .explode-toggle {
     top: 5.25rem;
     padding: 0.62rem 0.72rem;
@@ -1006,6 +1028,7 @@ button {
   .explode-toggle,
   .restart-button,
   .theme-button,
+  .auto-scroll-button,
   .icon-button {
     border: 1px solid ButtonText;
   }

@@ -13,6 +13,8 @@ interface StoryOverlayProps {
   onToggleExploded: () => void;
   theme: ThemeMode;
   onToggleTheme: () => void;
+  isAutoScrolling: boolean;
+  onToggleAutoScroll: () => void;
 }
 
 export function StoryOverlay({
@@ -25,6 +27,8 @@ export function StoryOverlay({
   onToggleExploded,
   theme,
   onToggleTheme,
+  isAutoScrolling,
+  onToggleAutoScroll,
 }: StoryOverlayProps) {
   return (
     <div className="story-overlay">
@@ -43,6 +47,17 @@ export function StoryOverlay({
         </div>
 
         <div className="topbar__actions">
+          <button
+            className="auto-scroll-button"
+            type="button"
+            onClick={onToggleAutoScroll}
+            aria-pressed={isAutoScrolling}
+            aria-label={isAutoScrolling ? 'Stop auto scroll' : 'Start auto scroll'}
+          >
+            <span aria-hidden="true">{isAutoScrolling ? '■' : '▶'}</span>
+            <span>{isAutoScrolling ? 'Stop' : 'Auto scroll'}</span>
+          </button>
+
           <button
             className="theme-button"
             type="button"

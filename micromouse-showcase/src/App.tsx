@@ -17,6 +17,7 @@ function App() {
   const [selected, setSelected] = useState<ComponentId | null>(null);
   const [isInspecting, setIsInspecting] = useState(false);
   const [explorationExploded, setExplorationExploded] = useState(false);
+  const [isAutoScrolling, setIsAutoScrolling] = useState(false);
   const inspectionIdleTimerRef = useRef<number | null>(null);
   const componentAnchorRef = useRef<ComponentScreenAnchor | null>(null);
   const [assetAvailable, setAssetAvailable] = useState(false);
@@ -63,6 +64,20 @@ function App() {
       window.clearTimeout(inspectionIdleTimerRef.current);
     }
   }, []);
+
+  useEffect(() => {
+    if (!isAutoScrolling) return;
+
+    const interval = window.setInterval(() => {
+      const nextChapter = (activeChapter + 1) % chapters.length;
+      document.getElementById(`chapter-${chapters[nextChapter].id}`)?.scrollIntoView({
+        behavior: reducedMotion ? 'auto' : 'smooth',
+        block: 'start',
+      });
+    }, 6_000);
+
+    return () => window.clearInterval(interval);
+  }, [activeChapter, isAutoScrolling, reducedMotion]);
 
   const restartTour = useCallback(() => {
     setSelected(null);
@@ -124,6 +139,8 @@ function App() {
         onToggleExploded={() => setExplorationExploded((current) => !current)}
         theme={theme}
         onToggleTheme={() => setTheme((current) => current === 'dark' ? 'light' : 'dark')}
+        isAutoScrolling={isAutoScrolling}
+        onToggleAutoScroll={() => setIsAutoScrolling((current) => !current)}
       />
 
       <ComponentLabel

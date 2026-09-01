@@ -86,3 +86,18 @@ test('switches themes, avoids a black dark mode, and remembers the choice', asyn
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   await expect(page.getByRole('button', { name: 'Switch to dark mode' })).toBeVisible();
 });
+
+test('auto scroll control advances chapters and can be stopped', async ({ page }) => {
+  await page.clock.install();
+  await page.goto('/');
+
+  const autoScroll = page.getByRole('button', { name: 'Start auto scroll' });
+  await autoScroll.click();
+  await expect(autoScroll).toHaveAttribute('aria-pressed', 'true');
+
+  await page.clock.fastForward(6_000);
+  await expect(page.getByTestId('chapter-inside')).toBeInViewport();
+
+  await page.getByRole('button', { name: 'Stop auto scroll' }).click();
+  await expect(page.getByRole('button', { name: 'Start auto scroll' })).toHaveAttribute('aria-pressed', 'false');
+});
