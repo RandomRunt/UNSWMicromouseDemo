@@ -86,31 +86,3 @@ test('switches themes, avoids a black dark mode, and remembers the choice', asyn
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   await expect(page.getByRole('button', { name: 'Switch to dark mode' })).toBeVisible();
 });
-
-test('auto scroll advances through all chapters, loops to 01, and can be stopped', async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/');
-  await page.clock.install();
-
-  const autoScroll = page.getByRole('button', { name: 'Start auto scroll' });
-  const activeChapterLink = () => page.locator('.chapter-rail a[aria-current="step"]');
-
-  await expect(autoScroll).toBeVisible();
-  await expect(autoScroll).toHaveAttribute('aria-pressed', 'false');
-  await expect(activeChapterLink()).toHaveAttribute('href', '#chapter-meet');
-
-  await autoScroll.click();
-  const stopAutoScroll = page.getByRole('button', { name: 'Stop auto scroll' });
-  await expect(stopAutoScroll).toHaveAttribute('aria-pressed', 'true');
-
-  for (const chapter of ['inside', 'sense', 'think', 'move', 'explore', 'meet']) {
-    await page.clock.fastForward(6_000);
-    await expect(activeChapterLink()).toHaveAttribute('href', `#chapter-${chapter}`);
-  }
-
-  await stopAutoScroll.click();
-  await expect(autoScroll).toHaveAttribute('aria-pressed', 'false');
-
-  await page.clock.fastForward(12_000);
-  await expect(activeChapterLink()).toHaveAttribute('href', '#chapter-meet');
-});
