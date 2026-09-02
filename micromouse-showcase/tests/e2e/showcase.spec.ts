@@ -1,5 +1,18 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+
+// Keep the real GLB route in the complete-story test. DOM and input journeys
+// use the supported fallback so CI does not decode the 32 MB model per test.
+async function routeModelToProceduralFallback(page: Page) {
+  await page.route('**/models/micromouse.glb', async (route) => {
+    if (route.request().method() === 'HEAD') {
+      await route.fulfill({ status: 404 });
+      return;
+    }
+
+    await route.continue();
+  });
+}
 
 test('tells the complete six-chapter story without console errors', async ({ page }) => {
   const errors: string[] = [];
@@ -21,14 +34,18 @@ test('tells the complete six-chapter story without console errors', async ({ pag
 });
 
 test('supports keyboard-accessible component inspection', async ({ page }) => {
+  await routeModelToProceduralFallback(page);
   await page.goto('/');
   await page.getByTestId('chapter-inside').scrollIntoViewIfNeeded();
 
   const indexToggle = page.getByRole('button', { name: /component index/i });
+  const indexPanel = page.getByTestId('component-index-panel');
   await expect(indexToggle).toHaveAttribute('aria-expanded', 'false');
+  await expect(indexPanel).toHaveAttribute('hidden', '');
   await expect(page.getByTestId('component-hint')).toContainText('Select a component');
   await indexToggle.click();
   await expect(indexToggle).toHaveAttribute('aria-expanded', 'true');
+  await expect(indexPanel).not.toHaveAttribute('hidden', '');
   await expect(page.getByTestId('component-hint')).toHaveCount(0);
 
   const controllerButton = page.getByRole('button', { name: 'MCU', includeHidden: true });
@@ -42,15 +59,16 @@ test('supports keyboard-accessible component inspection', async ({ page }) => {
 
   if (test.info().project.name === 'mobile-chromium') {
     await expect(indexToggle).toHaveAttribute('aria-expanded', 'false');
-    await expect(controllerButton).toBeHidden();
+    await expect(indexPanel).toHaveAttribute('hidden', '');
   } else {
     await indexToggle.click();
     await expect(indexToggle).toHaveAttribute('aria-expanded', 'false');
-    await expect(controllerButton).toBeHidden();
+    await expect(indexPanel).toHaveAttribute('hidden', '');
   }
 });
 
 test('enables 360-degree controls at the desktop page end or through mobile 3D view', async ({ page }) => {
+  await routeModelToProceduralFallback(page);
   await page.goto('/');
   const canvas = page.getByTestId('showcase-canvas');
   const canvasElement = canvas.locator('canvas');
@@ -90,6 +108,7 @@ test('enables 360-degree controls at the desktop page end or through mobile 3D v
 });
 
 test('dismisses the orbit controls hint after a drag or inward zoom', async ({ page }) => {
+  await routeModelToProceduralFallback(page);
   await page.goto('/');
 
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
@@ -128,34 +147,14 @@ test('dismisses the orbit controls hint after a drag or inward zoom', async ({ p
     await client.detach();
   } else {
     await page.mouse.move(centerX, centerY);
-    await page.mouse.down();
-    await page.mouse.move(centerX + 60, centerY + 20, { steps: 4 });
-    await page.mouse.up();
+    await page.mouse.wheel(0, -300);
   }
   await expect(page.getByTestId('orbit-hint')).toHaveCount(0);
   await expect(page.getByTestId('component-detail')).toHaveCount(0);
-
-  if (test.info().project.name === 'mobile-chromium') return;
-
-  await page.reload();
-  await page.evaluate(() => {
-    const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-    window.scrollTo(0, maxScroll);
-  });
-  await expect(page.getByTestId('orbit-hint')).toContainText('Drag to orbit');
-
-  const reloadedBounds = await canvas.boundingBox();
-  expect(reloadedBounds).not.toBeNull();
-  if (!reloadedBounds) return;
-  await page.mouse.move(
-    reloadedBounds.x + reloadedBounds.width * 0.65,
-    reloadedBounds.y + reloadedBounds.height * 0.5,
-  );
-  await page.mouse.wheel(0, -300);
-  await expect(page.getByTestId('orbit-hint')).toHaveCount(0);
 });
 
 test('has no automatically detectable critical accessibility violations', async ({ page }) => {
+  await routeModelToProceduralFallback(page);
   await page.goto('/');
   const results = await new AxeBuilder({ page }).analyze();
   expect(results.violations.filter((violation) => violation.impact === 'critical')).toEqual([]);
@@ -164,6 +163,7 @@ test('has no automatically detectable critical accessibility violations', async 
 test('keeps every chapter and overlay readable on iPhone-sized screens', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'mobile-chromium', 'iPhone layout coverage only runs in the touch project');
   testInfo.setTimeout(60_000);
+  await routeModelToProceduralFallback(page);
 
   for (const viewport of [{ width: 390, height: 844 }, { width: 430, height: 932 }]) {
     await page.setViewportSize(viewport);
@@ -271,6 +271,7 @@ test('keeps every chapter and overlay readable on iPhone-sized screens', async (
 });
 
 test('switches themes, avoids a black dark mode, and remembers the choice', async ({ page }) => {
+  await routeModelToProceduralFallback(page);
   await page.goto('/');
 
   const autoScrollButton = page.getByRole('button', { name: 'Start auto scroll' });

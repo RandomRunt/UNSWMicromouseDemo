@@ -213,6 +213,7 @@ export function StoryOverlay({
           <div
             id="component-index-panel"
             className="component-index__panel"
+            data-testid="component-index-panel"
             hidden={!isComponentIndexOpen}
           >
             <div className="component-index__grid">
