@@ -1,5 +1,5 @@
-import { Canvas } from '@react-three/fiber';
-import { Suspense } from 'react';
+import { Canvas, useThree } from '@react-three/fiber';
+import { Suspense, type ReactNode } from 'react';
 import type { ComponentId, ComponentScreenAnchorRef } from '../types/showcase';
 import { CameraRig } from '../scene/CameraRig';
 import { ComponentAnchorTracker } from '../scene/ComponentAnchorTracker';
@@ -8,6 +8,7 @@ import { MazeDemo } from '../scene/MazeDemo';
 import { GLBMicromouse, ProceduralMicromouse } from '../scene/MicromouseModel';
 import { SceneEnvironment } from '../scene/SceneEnvironment';
 import { SensorBeams } from '../scene/SensorBeams';
+import { getResponsiveRobotScale } from '../config/responsive';
 import { SceneLoader } from './LoadingScreen';
 import type { ThemeMode } from '../App';
 
@@ -20,11 +21,19 @@ interface ShowcaseCanvasProps {
   onSelect: (id: ComponentId) => void;
   onClearSelection: () => void;
   onInspectionInput: () => void;
+  onOrbitInteraction: () => void;
   inspectionActive: boolean;
   reducedMotion: boolean;
   assetAvailable: boolean;
   theme: ThemeMode;
   componentAnchorRef: ComponentScreenAnchorRef;
+}
+
+function ResponsiveRobotScale({ children }: { children: ReactNode }) {
+  const canvasWidth = useThree((state) => state.size.width);
+  const scale = getResponsiveRobotScale(canvasWidth);
+
+  return <group scale={scale}>{children}</group>;
 }
 
 export function ShowcaseCanvas({
@@ -36,6 +45,7 @@ export function ShowcaseCanvas({
   onSelect,
   onClearSelection,
   onInspectionInput,
+  onOrbitInteraction,
   inspectionActive,
   reducedMotion,
   assetAvailable,
@@ -68,30 +78,37 @@ export function ShowcaseCanvas({
           progress={progress}
           explorationEnabled={explorationEnabled}
           onInspectionInput={onInspectionInput}
+          onOrbitInteraction={onOrbitInteraction}
           reducedMotion={reducedMotion}
         />
         <Suspense fallback={<SceneLoader />}>
-          {assetAvailable ? (
-            <GLBMicromouse
-              activeChapter={modelChapter}
-              selected={selected}
-              onSelect={onSelect}
-              reducedMotion={reducedMotion}
-            />
-          ) : (
-            <ProceduralMicromouse
-              activeChapter={modelChapter}
-              selected={selected}
-              onSelect={onSelect}
-              reducedMotion={reducedMotion}
-            />
-          )}
+          <ResponsiveRobotScale>
+            {assetAvailable ? (
+              <GLBMicromouse
+                activeChapter={modelChapter}
+                selected={selected}
+                onSelect={onSelect}
+                reducedMotion={reducedMotion}
+              />
+            ) : (
+              <ProceduralMicromouse
+                activeChapter={modelChapter}
+                selected={selected}
+                onSelect={onSelect}
+                reducedMotion={reducedMotion}
+              />
+            )}
+          </ResponsiveRobotScale>
           <SensorBeams
             activeChapter={activeChapter}
             reducedMotion={reducedMotion}
             assetAvailable={assetAvailable}
           />
-          <MazeDemo activeChapter={activeChapter} reducedMotion={reducedMotion} />
+          <MazeDemo
+            progress={progress}
+            activeChapter={activeChapter}
+            reducedMotion={reducedMotion}
+          />
           <ComponentAnchorTracker selected={selected} anchorRef={componentAnchorRef} />
         </Suspense>
       </Canvas>

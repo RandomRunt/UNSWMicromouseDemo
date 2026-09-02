@@ -6,24 +6,25 @@ This repository contains discrete-movement and continuous-path controllers. Each
 
 | Implementation | Purpose | Route input |
 |---|---|---|
-| `DemoBot-Task4.1V2` | Original compact DemoBot controller with PID turns, encoder distance control and LiDAR wall following | Compile-time `f`, `l`, `r` string |
+| `DemoBotPinDetails4.1` | Original compact DemoBot controller with PID turns, encoder distance control and LiDAR wall following | Compile-time `f`, `l`, `r` string |
 | `DemoBotDiscreteMove` | Barebones DemoBot controller using the more robust discrete movement, custom IMU/LiDAR drivers and Task 4.2 support | Compile-time `f`, `l`, `r` string with one optional tuple block |
+| `DemoBotDiscreteMoveBluetooth` | Discrete DemoBot controller with one-way HC-06 route and sensor telemetry | Compile-time `f`, `l`, `r` string with one optional tuple block |
 | `DemoBotPPEKF` | Continuous pure-pursuit path following with encoder/IMU EKF estimation and optional map-based front-LiDAR correction | Compile-time `f`, `l`, `r` string converted to waypoints |
 | `micromouse-BestDiscreteMove` | Full reference implementation for Task 4.1/4.2 command routes or Task 4.3 autonomous mapping | Command string or autonomous start/goal configuration |
 | `F12A_T03-Micromouse-TaperedPPEKF` | Original continuous tapered pure-pursuit and EKF reference | Explicit waypoint array; no movement string |
 
-## DemoBot-Task4.1V2
+## DemoBotPinDetails4.1
 
 This is the original simple state-machine implementation. It combines consecutive forward commands, uses encoder distance and IMU heading feedback, follows side walls with the LiDAR sensors, and stops/settles when a front wall is detected.
 
 Important files:
 
-- `DemoBot-Task4.1V2/Task4.1DemoV2.ino` — pins, geometry, LiDAR thresholds, movement distance, speed limits, PID gains and route.
-- `DemoBot-Task4.1V2/PIDController.hpp` — PID calculation.
-- `DemoBot-Task4.1V2/Motor.hpp` — motor direction and PWM behaviour.
-- `DemoBot-Task4.1V2/DualEncoder.hpp` — encoder pins, counts and direction handling.
+- `DemoBotPinDetails4.1/DemoBotPinDetails4.1.ino` — pins, geometry, LiDAR thresholds, movement distance, speed limits, PID gains and route.
+- `DemoBotPinDetails4.1/PIDController.hpp` — PID calculation.
+- `DemoBotPinDetails4.1/Motor.hpp` — motor direction and PWM behaviour.
+- `DemoBotPinDetails4.1/DualEncoder.hpp` — encoder pins, counts and direction handling.
 
-Edit `moveSetChar` in `Task4.1DemoV2.ino`:
+Edit `moveSetChar` in `DemoBotPinDetails4.1.ino`:
 
 ```cpp
 char* moveSetChar = "ffrfl";
@@ -60,6 +61,10 @@ const char ROUTE[] PROGMEM = "ffrfl";
 - `r` — 90-degree stationary right turn.
 
 The route is lowercase, contains no spaces and runs once after startup.
+
+### Bluetooth telemetry variant
+
+`DemoBotDiscreteMoveBluetooth` uses the same route formats and movement logic, then adds an HC-06 software-serial link at 9600 baud. It transmits status, route events, targets, heading, encoder rotations, and left/front/right LiDAR readings. It does not accept Bluetooth control commands. See `DemoBotDiscreteMoveBluetooth/README.md` for wiring and the message format.
 
 ### Task 4.2 route format
 

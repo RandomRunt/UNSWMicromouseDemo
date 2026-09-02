@@ -41,6 +41,9 @@ export function ComponentLabel({ selected, anchorRef, onClose }: ComponentLabelP
 
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
+      const rootStyles = window.getComputedStyle(document.documentElement);
+      const safeAreaTop = Number.parseFloat(rootStyles.getPropertyValue('--safe-area-top')) || 0;
+      const safeAreaBottom = Number.parseFloat(rootStyles.getPropertyValue('--safe-area-bottom')) || 0;
       const isOnScreen = anchor.visible
         && anchor.x >= 0
         && anchor.x <= viewportWidth
@@ -58,6 +61,8 @@ export function ComponentLabel({ selected, anchorRef, onClose }: ComponentLabelP
       const cardBounds = card.getBoundingClientRect();
       const edge = viewportWidth <= 640 ? 16 : 24;
       const gap = viewportWidth <= 640 ? 28 : 52;
+      const topEdge = viewportWidth <= 640 ? 84 + safeAreaTop : edge;
+      const bottomEdge = viewportWidth <= 640 ? 82 + safeAreaBottom : edge;
       let cardLeft: number;
       let cardTop: number;
       let lineEndX: number;
@@ -65,9 +70,9 @@ export function ComponentLabel({ selected, anchorRef, onClose }: ComponentLabelP
 
       if (viewportWidth <= 720) {
         cardLeft = clamp(anchor.x - cardBounds.width / 2, edge, viewportWidth - cardBounds.width - edge);
-        const fitsBelow = anchor.y + gap + cardBounds.height <= viewportHeight - edge;
+        const fitsBelow = anchor.y + gap + cardBounds.height <= viewportHeight - bottomEdge;
         cardTop = fitsBelow ? anchor.y + gap : anchor.y - gap - cardBounds.height;
-        cardTop = clamp(cardTop, edge, viewportHeight - cardBounds.height - edge);
+        cardTop = clamp(cardTop, topEdge, viewportHeight - cardBounds.height - bottomEdge);
         lineEndX = clamp(anchor.x, cardLeft + 18, cardLeft + cardBounds.width - 18);
         lineEndY = cardTop > anchor.y ? cardTop : cardTop + cardBounds.height;
       } else {

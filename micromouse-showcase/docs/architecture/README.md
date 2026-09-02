@@ -9,8 +9,11 @@ For operating instructions, see the [project README](../../README.md). For the 3
 ```mermaid
 flowchart LR
     V[Visitor] -->|scroll, click, keyboard| B[Browser]
-    B -->|HTTP| N[Nginx container]
+    B -->|HTTP| H{Static host}
+    H --> N[Nginx container]
+    H --> P[GitHub Pages]
     N -->|HTML, CSS, JS, GLB| B
+    P -->|HTML, CSS, JS, GLB| B
     B --> D[React DOM story and controls]
     B --> W[React Three Fiber / WebGL scene]
     D <-->|shared React state| W
@@ -58,9 +61,12 @@ flowchart TD
 | Normalized scroll progress | `useScrollProgress` | Camera choreography and story transitions |
 | Active chapter | `useScrollProgress` | Story overlay, scene effects, exploded model state, controls |
 | Selected component | Component index or 3D pointer event | Model highlight, pressed state, component detail card |
-| Theme | Saved preference or OS preference | CSS token system, canvas background, fog, grid, scene lighting |
+| Exploration exploded | Final-chapter control | Optional teardown while orbit controls are enabled |
+| Mobile 3D view | Final-chapter mobile control | Locks page scrolling and gives touch gestures to orbit controls |
+| Theme | Saved preference or dark-mode default | CSS token system, canvas background, fog, grid, scene lighting |
 | Reduced motion | `prefers-reduced-motion` | Camera and object animation behavior |
 | GLB availability | Startup `HEAD` request | Selection between the GLB and procedural model |
+| Auto-scroll enabled | Visitor control | Six-second cyclic chapter navigation |
 
 No external state library is required because this state is local, shallow, and has a single composition root.
 
@@ -77,7 +83,9 @@ The page contains six full-height semantic sections defined by `src/story/chapte
 
 `useScrollProgress` converts `window.scrollY` into a value from 0 to 1 and derives the active chapter. Scroll updates are limited to one state update per animation frame. `CameraRig` and scene components map the current chapter to target positions and interpolate toward them in the render loop.
 
-The final chapter enables orbit controls. Earlier chapters retain authored camera positions so every visitor receives the same narrative sequence.
+The optional auto-scroll control keeps its own chapter cursor. While enabled, a six-second interval scrolls to the next section and wraps from chapter six to chapter one. Visitors can stop it from the top bar. When reduced motion is requested, chapter changes are immediate rather than smooth.
+
+The final chapter enables orbit controls automatically at the page end on desktop. On mobile, visitors use an explicit **Enter 3D view** control so touch gestures cannot compete with page scrolling; leaving the mode restores normal navigation. Earlier chapters retain authored camera positions so every visitor receives the same narrative sequence.
 
 ## 3D scene architecture
 
@@ -97,25 +105,30 @@ The WebGL canvas is marked `aria-hidden`. Equivalent component names, story text
 
 At startup the application sends a `HEAD` request to `/models/micromouse.glb`. A valid response selects the GLB implementation; otherwise the procedural implementation provides a fully functional fallback.
 
-The external GLB should contain these stable, unique object names:
+The checked-in GLB contains these stable, unique object names:
 
 ```text
 mouse_root
 chassis
-top_plate
-controller
-motor_driver
+bottom_pcb
+top_pcb
 battery
+power_switch
+microcontroller
 imu
-lidar_left
-lidar_front
-lidar_right
+tof_left
+tof_front
+tof_right
+oled_display
+motor_driver
 motor_left
 motor_right
-wheel_left
-wheel_right
 encoder_left
 encoder_right
+wheel_left
+wheel_right
+ball_caster_front
+ball_caster_rear
 ```
 
 `src/config/components.ts` is the presentation contract. It maps interactive mesh names to labels, descriptions, accent colors, and exploded-view offsets. Tests ensure names are unique and use lowercase ASCII with underscores.
@@ -137,11 +150,13 @@ The DOM layer provides:
 
 Selecting a component in the HTML index updates the same React state as selecting a 3D object. The component detail card therefore behaves consistently regardless of input method.
 
-The theme is stored under `micromouse-theme` in `localStorage`. On the first visit, the operating-system color preference is used. Theme state affects both CSS custom properties and WebGL scene values.
+Chapter 02 presents a one-time component-selection hint until the visitor selects a part from either the robot or component index. Chapter 06 presents a matching orbit hint until the visitor first drags the camera or zooms inward. Both hints remain dismissed for the rest of the current showcase session.
+
+The theme is stored under `micromouse-theme` in `localStorage`. On the first visit, dark mode is used by default. Theme state affects both CSS custom properties and WebGL scene values.
 
 ## Kiosk behavior
 
-`useKioskReset` listens for pointer, keyboard, and scroll activity. After 90 seconds without activity it clears the selected component and returns the page to the first chapter. The same reset is available through the **Restart tour** button.
+`useKioskReset` listens for pointer, keyboard, and scroll activity. After 90 seconds without activity it clears the selected component and returns the page to the first chapter. Auto-scroll generates scroll activity, so an actively cycling unattended tour does not trigger the idle reset.
 
 The kiosk timer is deliberately client-side. It requires no server session and resets independently in every open browser tab.
 
@@ -155,12 +170,16 @@ flowchart LR
     Dist --> Nginx[Nginx runtime image]
     Config[nginx.conf] --> Nginx
     Nginx -->|port 80| Host[Host port 8080]
+    Dist --> Artifact[GitHub Pages artifact]
+    Artifact --> Pages[GitHub Pages deployment]
 ```
 
 The multi-stage `Dockerfile` separates build-time and runtime concerns:
 
 1. The Node stage copies the package manifests, runs `npm ci`, copies the source, and runs the type-checked Vite production build.
 2. The Nginx stage copies only `dist/` and `nginx.conf` into the runtime image.
+
+The GitHub Actions workflow uses the same verified source for two publication targets after pushes to `main`: tagged container images in GitHub Container Registry and a static GitHub Pages artifact. The Pages build supplies `VITE_BASE_PATH=/UNSWMicromouseDemo/`; `src/config/assets.ts` derives the GLB URL from Vite's `BASE_URL`, so model loading works both below that repository path and at `/` in local or Nginx deployments.
 
 Nginx behavior:
 
@@ -182,7 +201,7 @@ micromouse-showcase/
 |-- docker-compose.yml
 |-- nginx.conf
 |-- public/
-|   `-- models/micromouse.glb         # Optional external digital twin
+|   `-- models/micromouse.glb         # Exported digital twin
 |-- cad/                              # Source/reference assets, not served
 |-- src/
 |   |-- App.tsx                       # State and application composition
@@ -220,7 +239,7 @@ The current system is intentionally deterministic. Likely extensions and their b
 | Additional chapters | Extend `chapters.ts`, camera targets, and any chapter-specific scene visibility |
 | New interactive components | Add the mesh to the GLB contract and one entry in `components.ts` |
 | Alternate robot model | Preserve the object-name contract or introduce a model-specific adapter |
-| Hosted deployment | Keep the static bundle; place HTTPS/CDN infrastructure in front of Nginx |
+| Alternate hosted deployment | Keep the static bundle and configure Vite's base path for the target URL |
 | Analytics | Add a consent-aware browser adapter; do not couple it to rendering |
 
 If live telemetry is introduced, the static story should remain the fallback so the showcase still operates when the robot or network is unavailable.

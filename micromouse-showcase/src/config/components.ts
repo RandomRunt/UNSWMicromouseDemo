@@ -57,7 +57,7 @@ export const componentDefinitions: ComponentDefinition[] = [
     shortLabel: 'MCU',
     description: 'Runs sensing, pose estimation, path following, and the motor control loop.',
     accent: '#ffb800',
-    explodeOffset: [0, 0.22, 0],
+    explodeOffset: [0, 0.27, 0],
   },
   {
     id: 'imu',
@@ -66,7 +66,7 @@ export const componentDefinitions: ComponentDefinition[] = [
     shortLabel: 'IMU',
     description: 'Measures angular motion so the estimated heading stays stable through fast turns.',
     accent: '#9edcff',
-    explodeOffset: [0, 0.22, 0],
+    explodeOffset: [0, 0.3, 0],
   },
   {
     id: 'tof_left',
@@ -102,7 +102,7 @@ export const componentDefinitions: ComponentDefinition[] = [
     shortLabel: 'OLED',
     description: 'Shows live robot status, sensor readings, and diagnostic information during operation.',
     accent: '#70b7ff',
-    explodeOffset: [0, 0.22, 0],
+    explodeOffset: [0, 0.24, 0],
   },
   {
     id: 'motor_driver',
@@ -190,6 +190,18 @@ export const componentDefinitions: ComponentDefinition[] = [
 export const componentById = Object.fromEntries(
   componentDefinitions.map((component) => [component.id, component]),
 ) as Record<ComponentId, ComponentDefinition>;
+
+// Chapter 03 calls out the hardware that contributes directly to pose and
+// wall sensing. Keeping the list beside the component catalogue prevents the
+// imported and procedural robots from drifting apart.
+export const sensingComponentIds = [
+  'tof_left',
+  'tof_front',
+  'tof_right',
+  'imu',
+  'encoder_left',
+  'encoder_right',
+] as const satisfies readonly ComponentId[];
 
 export const requiredMeshNames = [
   'mouse_root',

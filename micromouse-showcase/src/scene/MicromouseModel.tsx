@@ -2,10 +2,14 @@ import { useGLTF } from '@react-three/drei';
 import { ThreeEvent, useFrame } from '@react-three/fiber';
 import { ReactNode, useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
-import { componentById, componentDefinitions } from '../config/components';
+import {
+  componentById,
+  componentDefinitions,
+  sensingComponentIds,
+} from '../config/components';
 import { MICROMOUSE_MODEL_URL } from '../config/assets';
 import type { ComponentId } from '../types/showcase';
-import { getExplodeAmount } from './motion';
+import { getComponentExplodeAmount } from './motion';
 
 // Main GLB presentation controls. I tune these first whenever I replace or
 // re-export the Blender model. Scale is uniform, so one value preserves shape.
@@ -36,6 +40,13 @@ const GLB_EXPLODE_DIRECTION = new THREE.Quaternion().setFromEuler(
 const COMPONENT_MESH_NAMES = new Set(
   componentDefinitions.map((component) => component.meshName),
 );
+const SENSING_ACCENT_COLORS = sensingComponentIds.map(
+  (id) => new THREE.Color(componentById[id].accent),
+);
+
+// React Three Fiber reports pointer travel between press and release as delta.
+// Ignore larger movements so orbit drags do not also select the mesh beneath them.
+const MAX_COMPONENT_CLICK_MOVEMENT = 4;
 
 interface OriginalMaterialState {
   emissive: THREE.Color;
@@ -50,6 +61,59 @@ function visitComponentMeshes(
   if (!isRoot && COMPONENT_MESH_NAMES.has(root.name)) return;
   if (root instanceof THREE.Mesh) visitor(root);
   root.children.forEach((child) => visitComponentMeshes(child, visitor, false));
+}
+
+type SensingMaterialGroups = Map<ComponentId, THREE.MeshStandardMaterial[]>;
+
+function collectSensingMaterialGroups(namedComponents: Map<string, THREE.Object3D>) {
+  const groups: SensingMaterialGroups = new Map();
+  sensingComponentIds.forEach((id) => {
+    const object = namedComponents.get(componentById[id].meshName);
+    if (!object) return;
+    const materials = new Set<THREE.MeshStandardMaterial>();
+    visitComponentMeshes(object, (mesh) => {
+      const meshMaterials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      meshMaterials.forEach((material) => {
+        if (material instanceof THREE.MeshStandardMaterial) materials.add(material);
+      });
+    });
+    groups.set(id, [...materials]);
+  });
+  return groups;
+}
+
+function updateSensingHighlights(
+  materialGroups: SensingMaterialGroups,
+  originalMaterialStates: Map<THREE.MeshStandardMaterial, OriginalMaterialState>,
+  activeChapter: number,
+  selected: ComponentId | null,
+  reducedMotion: boolean,
+  elapsedTime: number,
+) {
+  const sensingActive = activeChapter === 2;
+  const pulse = reducedMotion
+    ? 0.12
+    : 0.06 + (Math.sin(elapsedTime * 2) * 0.5 + 0.5) * 0.2;
+
+  sensingComponentIds.forEach((id, index) => {
+    const materials = materialGroups.get(id);
+    if (!materials) return;
+    const selectedHere = selected === id;
+    const accent = SENSING_ACCENT_COLORS[index];
+
+    materials.forEach((material) => {
+      const original = originalMaterialStates.get(material);
+      if (!original) return;
+
+      if (selectedHere || sensingActive) {
+        material.emissive.copy(accent);
+        material.emissiveIntensity = selectedHere ? 0.7 : pulse;
+      } else {
+        material.emissive.copy(original.emissive);
+        material.emissiveIntensity = original.emissiveIntensity;
+      }
+    });
+  });
 }
 
 interface MicromouseProps {
@@ -85,7 +149,7 @@ function Part({
 
   useFrame((_, delta) => {
     if (!group.current) return;
-    const amount = getExplodeAmount(activeChapter);
+    const amount = getComponentExplodeAmount(activeChapter, id);
     target.set(
       base.x + definition.explodeOffset[0] * amount,
       base.y + definition.explodeOffset[1] * amount,
@@ -99,6 +163,7 @@ function Part({
 
   const select = (event: ThreeEvent<MouseEvent>) => {
     event.stopPropagation();
+    if (event.delta > MAX_COMPONENT_CLICK_MOVEMENT) return;
     onSelect(id);
   };
 
@@ -136,6 +201,39 @@ function CircuitMaterial({ color = '#1b5b43', selected = false }: { color?: stri
 
 export function ProceduralMicromouse({ activeChapter, selected, onSelect, reducedMotion }: MicromouseProps) {
   const root = useRef<THREE.Group>(null);
+  const sensingMaterialGroups = useRef<SensingMaterialGroups>(new Map());
+  const sensingMaterialStates = useRef(
+    new Map<THREE.MeshStandardMaterial, OriginalMaterialState>(),
+  );
+
+  useEffect(() => {
+    if (!root.current) return;
+    const namedComponents = new Map<string, THREE.Object3D>();
+    sensingMaterialStates.current.clear();
+
+    sensingComponentIds.forEach((id) => {
+      const object = root.current?.getObjectByName(componentById[id].meshName);
+      if (!object) return;
+      namedComponents.set(componentById[id].meshName, object);
+    });
+    sensingMaterialGroups.current = collectSensingMaterialGroups(namedComponents);
+    sensingMaterialGroups.current.forEach((materials) => {
+      materials.forEach((material) => {
+        sensingMaterialStates.current.set(material, {
+          emissive: material.emissive.clone(),
+          emissiveIntensity: material.emissiveIntensity,
+        });
+      });
+    });
+
+    const materialStates = sensingMaterialStates.current;
+    return () => {
+      materialStates.forEach((original, material) => {
+        material.emissive.copy(original.emissive);
+        material.emissiveIntensity = original.emissiveIntensity;
+      });
+    };
+  }, []);
 
   useFrame((state, delta) => {
     if (!root.current) return;
@@ -143,6 +241,14 @@ export function ProceduralMicromouse({ activeChapter, selected, onSelect, reduce
     const desiredRotation = reducedMotion ? -0.22 : -0.25 + Math.sin(state.clock.elapsedTime * 0.35) * idle;
     root.current.rotation.y = THREE.MathUtils.damp(root.current.rotation.y, desiredRotation, 2.5, delta);
     root.current.position.y = reducedMotion ? 0 : Math.sin(state.clock.elapsedTime * 0.7) * 0.015;
+    updateSensingHighlights(
+      sensingMaterialGroups.current,
+      sensingMaterialStates.current,
+      activeChapter,
+      selected,
+      reducedMotion,
+      state.clock.elapsedTime,
+    );
   });
 
   return (
@@ -253,9 +359,9 @@ export function ProceduralMicromouse({ activeChapter, selected, onSelect, reduce
           <boxGeometry args={[0.36, 0.25, 0.18]} />
           <meshStandardMaterial color="#20282b" metalness={0.55} roughness={0.34} />
         </mesh>
-        <mesh position={[0, 0, -0.1]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.065, 0.065, 0.035, 20]} />
-          <meshBasicMaterial color="#45e6ff" />
+        <mesh name="tof_front_emitter" position={[0, 0, -0.1]}>
+          <boxGeometry args={[0.11, 0.11, 0.03]} />
+          <meshStandardMaterial color="#050607" roughness={0.32} />
         </mesh>
       </Part>
 
@@ -264,12 +370,20 @@ export function ProceduralMicromouse({ activeChapter, selected, onSelect, reduce
           <boxGeometry args={[0.2, 0.23, 0.32]} />
           <meshStandardMaterial color="#20282b" metalness={0.55} roughness={0.34} />
         </mesh>
+        <mesh name="tof_left_emitter" position={[0, 0, 0.17]}>
+          <boxGeometry args={[0.11, 0.11, 0.03]} />
+          <meshStandardMaterial color="#050607" roughness={0.32} />
+        </mesh>
       </Part>
 
       <Part id="tof_right" activeChapter={activeChapter} selected={selected} onSelect={onSelect} position={[0.93, 0.4, -0.72]} rotation={[0, Math.PI / 2, 0]}>
         <mesh castShadow>
           <boxGeometry args={[0.2, 0.23, 0.32]} />
           <meshStandardMaterial color="#20282b" metalness={0.55} roughness={0.34} />
+        </mesh>
+        <mesh name="tof_right_emitter" position={[0, 0, 0.17]}>
+          <boxGeometry args={[0.11, 0.11, 0.03]} />
+          <meshStandardMaterial color="#050607" roughness={0.32} />
         </mesh>
       </Part>
 
@@ -343,7 +457,13 @@ export function GLBMicromouse({ activeChapter, selected, onSelect, reducedMotion
     localOffset: new THREE.Vector3(),
     target: new THREE.Vector3(),
   }), []);
-  const { scene, startPositions, namedComponents, originalMaterialStates } = useMemo(() => {
+  const {
+    scene,
+    startPositions,
+    namedComponents,
+    originalMaterialStates,
+    sensingMaterialGroups,
+  } = useMemo(() => {
     const clone = gltf.scene.clone(true);
     const positions = new Map<string, THREE.Vector3>();
     const named = new Map<string, THREE.Object3D>();
@@ -377,6 +497,7 @@ export function GLBMicromouse({ activeChapter, selected, onSelect, reducedMotion
       startPositions: positions,
       namedComponents: named,
       originalMaterialStates: materialStates,
+      sensingMaterialGroups: collectSensingMaterialGroups(named),
     };
   }, [gltf.scene]);
 
@@ -403,7 +524,7 @@ export function GLBMicromouse({ activeChapter, selected, onSelect, reducedMotion
       materials.forEach((material) => {
         if (!(material instanceof THREE.MeshStandardMaterial)) return;
         material.emissive.copy(accent);
-        material.emissiveIntensity = Math.max(material.emissiveIntensity, 0.42);
+        material.emissiveIntensity = Math.max(material.emissiveIntensity, 0.12);
         material.needsUpdate = true;
       });
     });
@@ -423,8 +544,8 @@ export function GLBMicromouse({ activeChapter, selected, onSelect, reducedMotion
     root.current.rotation.y = THREE.MathUtils.damp(root.current.rotation.y, idleRotation, 3, delta);
     root.current.updateWorldMatrix(true, true);
 
-    const amount = getExplodeAmount(activeChapter);
     componentDefinitions.forEach((component) => {
+      const amount = getComponentExplodeAmount(activeChapter, component.id);
       const object = namedComponents.get(component.meshName);
       const start = object ? startPositions.get(object.uuid) : undefined;
       if (!object || !start || !object.parent) return;
@@ -451,6 +572,15 @@ export function GLBMicromouse({ activeChapter, selected, onSelect, reducedMotion
       // Increase 5 for a faster teardown; decrease it for a slower, softer one.
       object.position.lerp(explodeScratch.target, 1 - Math.exp(-delta * 5));
     });
+
+    updateSensingHighlights(
+      sensingMaterialGroups,
+      originalMaterialStates,
+      activeChapter,
+      selected,
+      reducedMotion,
+      state.clock.elapsedTime,
+    );
   });
 
   const selectObject = (event: ThreeEvent<MouseEvent>) => {
@@ -459,6 +589,7 @@ export function GLBMicromouse({ activeChapter, selected, onSelect, reducedMotion
       const component = componentDefinitions.find((definition) => definition.meshName === object?.name);
       if (component) {
         event.stopPropagation();
+        if (event.delta > MAX_COMPONENT_CLICK_MOVEMENT) return;
         onSelect(component.id);
         return;
       }

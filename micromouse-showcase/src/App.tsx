@@ -5,6 +5,7 @@ import { StoryOverlay } from './components/StoryOverlay';
 import { MICROMOUSE_MODEL_URL } from './config/assets';
 import { chapters } from './story/chapters';
 import { useKioskReset } from './story/useKioskReset';
+import { useMobileViewport } from './story/useMobileViewport';
 import { useReducedMotion } from './story/useReducedMotion';
 import { useScrollProgress } from './story/useScrollProgress';
 import type { ComponentId, ComponentScreenAnchor } from './types/showcase';
@@ -14,8 +15,12 @@ export type ThemeMode = 'light' | 'dark';
 function App() {
   const { progress, activeChapter, isAtBottom } = useScrollProgress(chapters.length);
   const reducedMotion = useReducedMotion();
+  const isMobileViewport = useMobileViewport();
   const [selected, setSelected] = useState<ComponentId | null>(null);
   const [isInspecting, setIsInspecting] = useState(false);
+  const [hasInspectedComponent, setHasInspectedComponent] = useState(false);
+  const [hasUsedOrbitControls, setHasUsedOrbitControls] = useState(false);
+  const [isMobile3DView, setIsMobile3DView] = useState(false);
   const [explorationExploded, setExplorationExploded] = useState(false);
   const [isAutoScrolling, setIsAutoScrolling] = useState(false);
   const autoScrollChapterRef = useRef(activeChapter);
@@ -25,8 +30,11 @@ function App() {
   const [theme, setTheme] = useState<ThemeMode>(() => {
     const savedTheme = window.localStorage.getItem('micromouse-theme');
     if (savedTheme === 'light' || savedTheme === 'dark') return savedTheme;
-    return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    return 'dark';
   });
+  const isExploreChapter = activeChapter === chapters.length - 1;
+  const mobile3DViewActive = isMobileViewport && isExploreChapter && isMobile3DView;
+  const explorationEnabled = isMobileViewport ? mobile3DViewActive : isAtBottom;
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -46,19 +54,38 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (isAtBottom) return;
+    if (explorationEnabled) return;
 
     if (inspectionIdleTimerRef.current !== null) {
       window.clearTimeout(inspectionIdleTimerRef.current);
       inspectionIdleTimerRef.current = null;
     }
     setIsInspecting(false);
-  }, [isAtBottom]);
+  }, [explorationEnabled]);
 
   useEffect(() => {
     // Do not carry the optional chapter 06 teardown into another chapter.
-    if (activeChapter !== chapters.length - 1) setExplorationExploded(false);
-  }, [activeChapter]);
+    if (!isExploreChapter) {
+      setExplorationExploded(false);
+      setIsMobile3DView(false);
+    }
+  }, [isExploreChapter]);
+
+  useEffect(() => {
+    if (!isMobileViewport) setIsMobile3DView(false);
+  }, [isMobileViewport]);
+
+  useEffect(() => {
+    if (mobile3DViewActive) {
+      document.documentElement.setAttribute('data-mobile-3d-view', 'true');
+    } else {
+      document.documentElement.removeAttribute('data-mobile-3d-view');
+    }
+
+    return () => {
+      document.documentElement.removeAttribute('data-mobile-3d-view');
+    };
+  }, [mobile3DViewActive]);
 
   useEffect(() => () => {
     if (inspectionIdleTimerRef.current !== null) {
@@ -88,12 +115,14 @@ function App() {
   const restartTour = useCallback(() => {
     setSelected(null);
     setExplorationExploded(false);
+    setIsMobile3DView(false);
     componentAnchorRef.current = null;
     window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' });
   }, [reducedMotion]);
 
   const selectComponent = useCallback((id: ComponentId) => {
     componentAnchorRef.current = null;
+    setHasInspectedComponent(true);
     setSelected((current) => current === id ? null : id);
   }, []);
 
@@ -115,6 +144,15 @@ function App() {
     }, 10_000);
   }, []);
 
+  const handleOrbitInteraction = useCallback(() => {
+    setHasUsedOrbitControls(true);
+  }, []);
+
+  const handleToggleMobile3DView = useCallback(() => {
+    if (!isMobile3DView) setIsAutoScrolling(false);
+    setIsMobile3DView((current) => !current);
+  }, [isMobile3DView]);
+
   useKioskReset(restartTour);
 
   return (
@@ -122,12 +160,13 @@ function App() {
       <ShowcaseCanvas
         progress={progress}
         activeChapter={activeChapter}
-        explorationEnabled={isAtBottom}
+        explorationEnabled={explorationEnabled}
         explorationExploded={explorationExploded}
         selected={selected}
         onSelect={selectComponent}
         onClearSelection={clearComponent}
         onInspectionInput={handleInspectionInput}
+        onOrbitInteraction={handleOrbitInteraction}
         inspectionActive={isInspecting}
         reducedMotion={reducedMotion}
         assetAvailable={assetAvailable}
@@ -137,10 +176,14 @@ function App() {
 
       <StoryOverlay
         activeChapter={activeChapter}
+        explorationEnabled={explorationEnabled}
+        mobile3DViewActive={mobile3DViewActive}
+        onToggleMobile3DView={handleToggleMobile3DView}
+        hasInspectedComponent={hasInspectedComponent}
+        hasUsedOrbitControls={hasUsedOrbitControls}
         selected={selected}
         assetAvailable={assetAvailable}
         onSelect={selectComponent}
-        onRestart={restartTour}
         explorationExploded={explorationExploded}
         onToggleExploded={() => setExplorationExploded((current) => !current)}
         theme={theme}
@@ -165,7 +208,7 @@ function App() {
             data-testid={`chapter-${chapter.id}`}
           >
             <div
-              className={`chapter-copy${index === chapters.length - 1 && isInspecting
+              className={`chapter-copy${index === chapters.length - 1 && (isInspecting || mobile3DViewActive)
                 ? ' chapter-copy--inspection-active'
                 : ''}`}
             >

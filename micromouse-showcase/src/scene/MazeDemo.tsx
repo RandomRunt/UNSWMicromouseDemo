@@ -1,9 +1,12 @@
 import { Line } from '@react-three/drei';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import { useRef } from 'react';
 import * as THREE from 'three';
+import { getResponsiveMazeScale } from '../config/responsive';
+import { getMazeScrollScale, MIN_SCENE_SCALE } from './motion';
 
 interface MazeDemoProps {
+  progress: number;
   activeChapter: number;
   reducedMotion: boolean;
 }
@@ -13,10 +16,10 @@ type WallSegment = readonly [x: number, z: number, width: number, depth: number]
 
 // Main maze tuning controls. More cells creates a denser maze, while a smaller
 // cell size moves the walls closer together without changing their thickness.
-const MAZE_SIZE = 7;
-const CELL_SIZE = 0.62;
+const MAZE_SIZE = 9;
+const CELL_SIZE = 0.55;
 const WALL_THICKNESS = 0.075;
-const WALL_HEIGHT = 0.42;
+const WALL_HEIGHT = 0.22;
 const MAZE_Y = -0.62; // Keeps the wall tops below the imported Micromouse.
 const FLOOR_Y = -WALL_HEIGHT / 2;
 const ROUTE_Y = FLOOR_Y + 0.035;
@@ -184,15 +187,22 @@ for (let index = 0; index < pathPoints.length - 1; index += 1) {
   routeCurve.add(new THREE.LineCurve3(pathPoints[index], pathPoints[index + 1]));
 }
 
-export function MazeDemo({ activeChapter, reducedMotion }: MazeDemoProps) {
+export function MazeDemo({ progress, activeChapter, reducedMotion }: MazeDemoProps) {
   const group = useRef<THREE.Group>(null);
   const marker = useRef<THREE.Mesh>(null);
+  const canvasWidth = useThree((state) => state.size.width);
+  const responsiveScale = getResponsiveMazeScale(canvasWidth);
 
   useFrame((state, delta) => {
     if (!group.current) return;
-    const targetScale = activeChapter === 4 ? 1 : 0.001;
+    const storyScale = reducedMotion
+      ? (activeChapter === 4 ? 1 : MIN_SCENE_SCALE)
+      : getMazeScrollScale(progress);
+    const targetScale = storyScale * responsiveScale;
+    const hiddenScale = MIN_SCENE_SCALE * responsiveScale;
     const nextScale = THREE.MathUtils.damp(group.current.scale.x, targetScale, 6, delta);
     group.current.scale.setScalar(nextScale);
+    group.current.visible = activeChapter === 4 || nextScale > hiddenScale * 2;
 
     if (marker.current && activeChapter === 4 && !reducedMotion) {
       // 0.08 controls how quickly the cube completes the solved route.
@@ -206,7 +216,12 @@ export function MazeDemo({ activeChapter, reducedMotion }: MazeDemoProps) {
   const totalSize = MAZE_SIZE * CELL_SIZE;
 
   return (
-    <group ref={group} position={[0, MAZE_Y, 0]} visible={activeChapter === 4}>
+    <group
+      ref={group}
+      position={[0, MAZE_Y, 0]}
+      scale={MIN_SCENE_SCALE * responsiveScale}
+      visible={false}
+    >
       <mesh position={[0, FLOOR_Y - 0.025, 0]} receiveShadow>
         <boxGeometry args={[totalSize + 0.12, 0.05, totalSize + 0.12]} />
         <meshStandardMaterial color="#101517" roughness={0.92} metalness={0.08} />

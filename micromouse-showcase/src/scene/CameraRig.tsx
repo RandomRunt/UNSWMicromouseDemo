@@ -7,6 +7,7 @@ interface CameraRigProps {
   progress: number;
   explorationEnabled: boolean;
   onInspectionInput: () => void;
+  onOrbitInteraction: () => void;
   reducedMotion: boolean;
 }
 
@@ -26,23 +27,47 @@ export function CameraRig({
   progress,
   explorationEnabled,
   onInspectionInput,
+  onOrbitInteraction,
   reducedMotion,
 }: CameraRigProps) {
   const { camera } = useThree();
   // All guided camera views look at this point. Raising Y aims higher on the robot.
   const target = useMemo(() => new THREE.Vector3(0, 0.35, 0), []);
+  const controlsTarget = useMemo(() => new THREE.Vector3(0, 0.2, 0), []);
   const desired = useMemo(() => new THREE.Vector3(), []);
   const isUsingControlsRef = useRef(false);
+  const hasReportedInteractionRef = useRef(false);
+  const interactionStartOffsetRef = useRef(new THREE.Vector3());
+  const currentOffsetRef = useRef(new THREE.Vector3());
 
   const handleControlStart = useCallback(() => {
     if (!explorationEnabled) return;
     isUsingControlsRef.current = true;
+    hasReportedInteractionRef.current = false;
+    interactionStartOffsetRef.current.copy(camera.position).sub(controlsTarget);
     onInspectionInput();
-  }, [explorationEnabled, onInspectionInput]);
+  }, [camera, controlsTarget, explorationEnabled, onInspectionInput]);
 
   const handleControlChange = useCallback(() => {
-    if (isUsingControlsRef.current) onInspectionInput();
-  }, [onInspectionInput]);
+    if (!isUsingControlsRef.current) return;
+    onInspectionInput();
+
+    if (hasReportedInteractionRef.current) return;
+
+    const startOffset = interactionStartOffsetRef.current;
+    const currentOffset = currentOffsetRef.current.copy(camera.position).sub(controlsTarget);
+    const startDistance = startOffset.length();
+    const currentDistance = currentOffset.length();
+    const zoomedIn = currentDistance < startDistance - 0.01;
+    const dragged = startDistance > 0
+      && currentDistance > 0
+      && startOffset.angleTo(currentOffset) > 0.002;
+
+    if (dragged || zoomedIn) {
+      hasReportedInteractionRef.current = true;
+      onOrbitInteraction();
+    }
+  }, [camera, controlsTarget, onInspectionInput, onOrbitInteraction]);
 
   const handleControlEnd = useCallback(() => {
     if (!isUsingControlsRef.current) return;
@@ -79,7 +104,7 @@ export function CameraRig({
       minPolarAngle={0.15}
       maxPolarAngle={2.75}
       // Keep this close to the guided target above so the handover feels natural.
-      target={[0, 0.2, 0]}
+      target={controlsTarget}
       onStart={handleControlStart}
       onChange={handleControlChange}
       onEnd={handleControlEnd}
