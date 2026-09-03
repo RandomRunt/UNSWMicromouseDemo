@@ -1,13 +1,19 @@
 import { Canvas, useThree } from '@react-three/fiber';
 import { Suspense, type ReactNode } from 'react';
-import type { ComponentId, ComponentScreenAnchorRef } from '../types/showcase';
+import type {
+  ComponentId,
+  ComponentScreenAnchorRef,
+  ModelAvailability,
+} from '../types/showcase';
 import { CameraRig } from '../scene/CameraRig';
 import { ComponentAnchorTracker } from '../scene/ComponentAnchorTracker';
 import { Lighting } from '../scene/Lighting';
+import { InspectionGuides } from '../scene/InspectionGuides';
 import { MazeDemo } from '../scene/MazeDemo';
 import { GLBMicromouse, ProceduralMicromouse } from '../scene/MicromouseModel';
 import { SceneEnvironment } from '../scene/SceneEnvironment';
 import { SensorBeams } from '../scene/SensorBeams';
+import { shouldSpinWheels } from '../scene/motion';
 import { getResponsiveRobotScale } from '../config/responsive';
 import { SceneLoader } from './LoadingScreen';
 import type { ThemeMode } from '../App';
@@ -24,7 +30,7 @@ interface ShowcaseCanvasProps {
   onOrbitInteraction: () => void;
   inspectionActive: boolean;
   reducedMotion: boolean;
-  assetAvailable: boolean;
+  modelAvailability: ModelAvailability;
   theme: ThemeMode;
   componentAnchorRef: ComponentScreenAnchorRef;
 }
@@ -48,7 +54,7 @@ export function ShowcaseCanvas({
   onOrbitInteraction,
   inspectionActive,
   reducedMotion,
-  assetAvailable,
+  modelAvailability,
   theme,
   componentAnchorRef,
 }: ShowcaseCanvasProps) {
@@ -56,6 +62,12 @@ export function ShowcaseCanvas({
   // the robot model chapter 02's full teardown amount; the camera, maze and
   // sensor effects still receive the real active chapter.
   const modelChapter = activeChapter === 5 && explorationExploded ? 1 : activeChapter;
+  const assetAvailable = modelAvailability === 'available';
+  const modelSource = modelAvailability === 'checking'
+    ? 'loading'
+    : modelAvailability === 'available'
+      ? 'digital-twin'
+      : 'procedural-fallback';
 
   return (
     <div
@@ -63,6 +75,9 @@ export function ShowcaseCanvas({
       aria-hidden="true"
       data-testid="showcase-canvas"
       data-exploration-enabled={explorationEnabled}
+      data-model-source={modelSource}
+      data-inspection-guides={activeChapter === 2}
+      data-wheel-motion={shouldSpinWheels(activeChapter, reducedMotion)}
     >
       <Canvas
         shadows
@@ -82,34 +97,44 @@ export function ShowcaseCanvas({
           reducedMotion={reducedMotion}
         />
         <Suspense fallback={<SceneLoader />}>
-          <ResponsiveRobotScale>
-            {assetAvailable ? (
-              <GLBMicromouse
-                activeChapter={modelChapter}
-                selected={selected}
-                onSelect={onSelect}
+          {modelAvailability === 'checking' ? (
+            <SceneLoader />
+          ) : (
+            <>
+              <ResponsiveRobotScale>
+                {assetAvailable ? (
+                  <GLBMicromouse
+                    activeChapter={modelChapter}
+                    selected={selected}
+                    onSelect={onSelect}
+                    reducedMotion={reducedMotion}
+                  />
+                ) : (
+                  <ProceduralMicromouse
+                    activeChapter={modelChapter}
+                    selected={selected}
+                    onSelect={onSelect}
+                    reducedMotion={reducedMotion}
+                  />
+                )}
+              </ResponsiveRobotScale>
+              <SensorBeams
+                activeChapter={activeChapter}
+                reducedMotion={reducedMotion}
+                assetAvailable={assetAvailable}
+              />
+              <InspectionGuides
+                activeChapter={activeChapter}
+                assetAvailable={assetAvailable}
+              />
+              <MazeDemo
+                progress={progress}
+                activeChapter={activeChapter}
                 reducedMotion={reducedMotion}
               />
-            ) : (
-              <ProceduralMicromouse
-                activeChapter={modelChapter}
-                selected={selected}
-                onSelect={onSelect}
-                reducedMotion={reducedMotion}
-              />
-            )}
-          </ResponsiveRobotScale>
-          <SensorBeams
-            activeChapter={activeChapter}
-            reducedMotion={reducedMotion}
-            assetAvailable={assetAvailable}
-          />
-          <MazeDemo
-            progress={progress}
-            activeChapter={activeChapter}
-            reducedMotion={reducedMotion}
-          />
-          <ComponentAnchorTracker selected={selected} anchorRef={componentAnchorRef} />
+              <ComponentAnchorTracker selected={selected} anchorRef={componentAnchorRef} />
+            </>
+          )}
         </Suspense>
       </Canvas>
       <div

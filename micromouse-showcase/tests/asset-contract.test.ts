@@ -10,6 +10,7 @@ import {
   getMazeScrollScale,
   MIN_SCENE_SCALE,
   senseChapterAssembledComponentIds,
+  shouldSpinWheels,
 } from '../src/scene/motion';
 import {
   getResponsiveMazeScale,
@@ -39,18 +40,21 @@ describe('Micromouse model contract', () => {
     expect([0, 1, 2, 3, 4, 5].map(getExplodeAmount)).toEqual([0, 1, 1, 0, 0, 0]);
   });
 
-  it('reassembles the controller, display, and ball casters during chapter 03', () => {
+  it('reassembles non-featured parts and all ToF sensors during chapter 03', () => {
     expect(senseChapterAssembledComponentIds).toEqual([
       'microcontroller',
       'oled_display',
       'ball_caster_front',
       'ball_caster_rear',
+      'tof_left',
+      'tof_front',
+      'tof_right',
     ]);
     senseChapterAssembledComponentIds.forEach((id) => {
       expect(getComponentExplodeAmount(1, id)).toBe(1);
       expect(getComponentExplodeAmount(2, id)).toBe(0);
     });
-    expect(getComponentExplodeAmount(2, 'tof_front')).toBe(1);
+    expect(getComponentExplodeAmount(2, 'tof_front')).toBe(0);
   });
 
   it('highlights all range and motion sensors during chapter 03', () => {
@@ -62,6 +66,18 @@ describe('Micromouse model contract', () => {
       'encoder_left',
       'encoder_right',
     ]);
+  });
+
+  it('spins the wheels only during chapter 04 when motion is allowed', () => {
+    expect([0, 1, 2, 3, 4, 5].map((chapter) => shouldSpinWheels(chapter, false))).toEqual([
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+    ]);
+    expect(shouldSpinWheels(3, true)).toBe(false);
   });
 
   it('uses one responsive scale for the mobile robot and its sensor beams', () => {

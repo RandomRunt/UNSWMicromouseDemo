@@ -4,11 +4,14 @@ import { ShowcaseCanvas } from './components/ShowcaseCanvas';
 import { StoryOverlay } from './components/StoryOverlay';
 import { MICROMOUSE_MODEL_URL } from './config/assets';
 import { chapters } from './story/chapters';
-import { useKioskReset } from './story/useKioskReset';
 import { useMobileViewport } from './story/useMobileViewport';
 import { useReducedMotion } from './story/useReducedMotion';
 import { useScrollProgress } from './story/useScrollProgress';
-import type { ComponentId, ComponentScreenAnchor } from './types/showcase';
+import type {
+  ComponentId,
+  ComponentScreenAnchor,
+  ModelAvailability,
+} from './types/showcase';
 
 export type ThemeMode = 'light' | 'dark';
 
@@ -26,7 +29,7 @@ function App() {
   const autoScrollChapterRef = useRef(activeChapter);
   const inspectionIdleTimerRef = useRef<number | null>(null);
   const componentAnchorRef = useRef<ComponentScreenAnchor | null>(null);
-  const [assetAvailable, setAssetAvailable] = useState(false);
+  const [modelAvailability, setModelAvailability] = useState<ModelAvailability>('checking');
   const [theme, setTheme] = useState<ThemeMode>(() => {
     const savedTheme = window.localStorage.getItem('micromouse-theme');
     if (savedTheme === 'light' || savedTheme === 'dark') return savedTheme;
@@ -47,9 +50,12 @@ function App() {
     fetch(MICROMOUSE_MODEL_URL, { method: 'HEAD', cache: 'no-store', signal: controller.signal })
       .then((response) => {
         const type = response.headers.get('content-type') ?? '';
-        setAssetAvailable(response.ok && !type.includes('text/html'));
+        setModelAvailability(response.ok && !type.includes('text/html') ? 'available' : 'unavailable');
       })
-      .catch(() => setAssetAvailable(false));
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') return;
+        setModelAvailability('unavailable');
+      });
     return () => controller.abort();
   }, []);
 
@@ -112,14 +118,6 @@ function App() {
     return () => window.clearInterval(interval);
   }, [isAutoScrolling, reducedMotion]);
 
-  const restartTour = useCallback(() => {
-    setSelected(null);
-    setExplorationExploded(false);
-    setIsMobile3DView(false);
-    componentAnchorRef.current = null;
-    window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' });
-  }, [reducedMotion]);
-
   const selectComponent = useCallback((id: ComponentId) => {
     componentAnchorRef.current = null;
     setHasInspectedComponent(true);
@@ -153,8 +151,6 @@ function App() {
     setIsMobile3DView((current) => !current);
   }, [isMobile3DView]);
 
-  useKioskReset(restartTour);
-
   return (
     <>
       <ShowcaseCanvas
@@ -169,7 +165,7 @@ function App() {
         onOrbitInteraction={handleOrbitInteraction}
         inspectionActive={isInspecting}
         reducedMotion={reducedMotion}
-        assetAvailable={assetAvailable}
+        modelAvailability={modelAvailability}
         theme={theme}
         componentAnchorRef={componentAnchorRef}
       />
@@ -182,7 +178,7 @@ function App() {
         hasInspectedComponent={hasInspectedComponent}
         hasUsedOrbitControls={hasUsedOrbitControls}
         selected={selected}
-        assetAvailable={assetAvailable}
+        modelAvailability={modelAvailability}
         onSelect={selectComponent}
         explorationExploded={explorationExploded}
         onToggleExploded={() => setExplorationExploded((current) => !current)}

@@ -158,7 +158,6 @@ Place or replace the GLB before building the Docker image, then rebuild the cont
 - Select components from the component index to inspect them.
 - Use the top-right switch to choose light or graphite-grey dark mode. The choice is stored in that browser.
 - The final chapter enables orbit and zoom controls.
-- After 90 seconds without pointer, keyboard, or scroll activity, the kiosk returns to the first chapter.
 
 For an unattended display, start the container before the event and open `http://localhost:8080` in the browser's full-screen or kiosk mode. The Compose service uses `restart: unless-stopped`, so Docker restarts the container after a machine or daemon restart.
 

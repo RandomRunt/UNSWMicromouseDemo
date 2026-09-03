@@ -9,7 +9,7 @@ import {
 } from '../config/components';
 import { MICROMOUSE_MODEL_URL } from '../config/assets';
 import type { ComponentId } from '../types/showcase';
-import { getComponentExplodeAmount } from './motion';
+import { getComponentExplodeAmount, shouldSpinWheels } from './motion';
 
 // Main GLB presentation controls. I tune these first whenever I replace or
 // re-export the Blender model. Scale is uniform, so one value preserves shape.
@@ -185,6 +185,25 @@ function Part({
       {children}
     </group>
   );
+}
+
+function SpinningWheel({
+  activeChapter,
+  reducedMotion,
+  children,
+}: {
+  activeChapter: number;
+  reducedMotion: boolean;
+  children: ReactNode;
+}) {
+  const group = useRef<THREE.Group>(null);
+
+  useFrame((_, delta) => {
+    if (!group.current || !shouldSpinWheels(activeChapter, reducedMotion)) return;
+    group.current.rotation.y -= delta * 5;
+  });
+
+  return <group ref={group}>{children}</group>;
 }
 
 function CircuitMaterial({ color = '#1b5b43', selected = false }: { color?: string; selected?: boolean }) {
@@ -412,14 +431,20 @@ export function ProceduralMicromouse({ activeChapter, selected, onSelect, reduce
               </mesh>
             </Part>
             <Part id={wheelId} activeChapter={activeChapter} selected={selected} onSelect={onSelect} position={[side === 'left' ? -1.08 : 1.08, 0.2, 0.3]} rotation={[0, 0, Math.PI / 2]}>
-              <mesh castShadow>
-                <cylinderGeometry args={[0.47, 0.47, 0.24, 30]} />
-                <meshStandardMaterial color="#090b0c" roughness={0.88} metalness={0.08} />
-              </mesh>
-              <mesh position={[0, side === 'left' ? -0.125 : 0.125, 0]}>
-                <cylinderGeometry args={[0.19, 0.19, 0.255, 20]} />
-                <meshStandardMaterial color="#ffb800" metalness={0.7} roughness={0.25} />
-              </mesh>
+              <SpinningWheel activeChapter={activeChapter} reducedMotion={reducedMotion}>
+                <mesh castShadow>
+                  <cylinderGeometry args={[0.47, 0.47, 0.24, 30]} />
+                  <meshStandardMaterial color="#090b0c" roughness={0.88} metalness={0.08} />
+                </mesh>
+                <mesh position={[0, side === 'left' ? -0.125 : 0.125, 0]}>
+                  <cylinderGeometry args={[0.19, 0.19, 0.255, 20]} />
+                  <meshStandardMaterial color="#ffb800" metalness={0.7} roughness={0.25} />
+                </mesh>
+                <mesh position={[0, side === 'left' ? -0.135 : 0.135, 0.29]}>
+                  <boxGeometry args={[0.08, 0.018, 0.2]} />
+                  <meshStandardMaterial color="#d8ff65" emissive="#6d812c" emissiveIntensity={0.3} />
+                </mesh>
+              </SpinningWheel>
             </Part>
             <Part id={encoderId} activeChapter={activeChapter} selected={selected} onSelect={onSelect} position={[side === 'left' ? -0.78 : 0.78, 0.31, 0.31]} rotation={[0, 0, Math.PI / 2]}>
               <mesh>
@@ -450,6 +475,10 @@ export function ProceduralMicromouse({ activeChapter, selected, onSelect, reduce
 export function GLBMicromouse({ activeChapter, selected, onSelect, reducedMotion }: MicromouseProps) {
   const gltf = useGLTF(MICROMOUSE_MODEL_URL);
   const root = useRef<THREE.Group>(null);
+  const wheelSpinAngle = useRef(0);
+  const wheelSpinQuaternion = useRef(new THREE.Quaternion());
+  // The checked-in GLB wheel geometry is thinnest on local X, its axle axis.
+  const wheelSpinAxis = useRef(new THREE.Vector3(1, 0, 0));
   const explodeScratch = useMemo(() => ({
     parentToShowcase: new THREE.Matrix4(),
     showcaseToParent: new THREE.Matrix4(),
@@ -460,16 +489,19 @@ export function GLBMicromouse({ activeChapter, selected, onSelect, reducedMotion
   const {
     scene,
     startPositions,
+    startQuaternions,
     namedComponents,
     originalMaterialStates,
     sensingMaterialGroups,
   } = useMemo(() => {
     const clone = gltf.scene.clone(true);
     const positions = new Map<string, THREE.Vector3>();
+    const quaternions = new Map<string, THREE.Quaternion>();
     const named = new Map<string, THREE.Object3D>();
     const materialStates = new Map<THREE.MeshStandardMaterial, OriginalMaterialState>();
     clone.traverse((object) => {
       positions.set(object.uuid, object.position.clone());
+      quaternions.set(object.uuid, object.quaternion.clone());
       if (componentDefinitions.some((component) => component.meshName === object.name)) {
         named.set(object.name, object);
       }
@@ -495,6 +527,7 @@ export function GLBMicromouse({ activeChapter, selected, onSelect, reducedMotion
     return {
       scene: clone,
       startPositions: positions,
+      startQuaternions: quaternions,
       namedComponents: named,
       originalMaterialStates: materialStates,
       sensingMaterialGroups: collectSensingMaterialGroups(named),
@@ -571,6 +604,17 @@ export function GLBMicromouse({ activeChapter, selected, onSelect, reducedMotion
         .addScaledVector(explodeScratch.localOffset, amount);
       // Increase 5 for a faster teardown; decrease it for a slower, softer one.
       object.position.lerp(explodeScratch.target, 1 - Math.exp(-delta * 5));
+    });
+
+    if (shouldSpinWheels(activeChapter, reducedMotion)) {
+      wheelSpinAngle.current -= delta * 5;
+    }
+    (['wheel_left', 'wheel_right'] as const).forEach((id) => {
+      const wheel = namedComponents.get(componentById[id].meshName);
+      const startQuaternion = wheel ? startQuaternions.get(wheel.uuid) : undefined;
+      if (!wheel || !startQuaternion) return;
+      wheelSpinQuaternion.current.setFromAxisAngle(wheelSpinAxis.current, wheelSpinAngle.current);
+      wheel.quaternion.copy(startQuaternion).multiply(wheelSpinQuaternion.current);
     });
 
     updateSensingHighlights(

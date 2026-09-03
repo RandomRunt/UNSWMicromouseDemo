@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { componentDefinitions } from '../config/components';
 import { chapters } from '../story/chapters';
-import type { ComponentId } from '../types/showcase';
+import type { ComponentId, ModelAvailability } from '../types/showcase';
 import type { ThemeMode } from '../App';
 
 interface StoryOverlayProps {
@@ -12,7 +12,7 @@ interface StoryOverlayProps {
   hasInspectedComponent: boolean;
   hasUsedOrbitControls: boolean;
   selected: ComponentId | null;
-  assetAvailable: boolean;
+  modelAvailability: ModelAvailability;
   onSelect: (id: ComponentId) => void;
   explorationExploded: boolean;
   onToggleExploded: () => void;
@@ -30,7 +30,7 @@ export function StoryOverlay({
   hasInspectedComponent,
   hasUsedOrbitControls,
   selected,
-  assetAvailable,
+  modelAvailability,
   onSelect,
   explorationExploded,
   onToggleExploded,
@@ -41,6 +41,11 @@ export function StoryOverlay({
 }: StoryOverlayProps) {
   const isInsideChapter = activeChapter === 1;
   const isExploreChapter = activeChapter === chapters.length - 1;
+  const systemStatus = modelAvailability === 'checking'
+    ? 'LOADING DIGITAL TWIN'
+    : modelAvailability === 'available'
+      ? 'DIGITAL TWIN ONLINE'
+      : 'MICROMOUSE VISUALISATION';
   const [isComponentIndexOpen, setIsComponentIndexOpen] = useState(false);
 
   useEffect(() => {
@@ -67,7 +72,7 @@ export function StoryOverlay({
 
         <div className="topbar__status" aria-label="Showcase system status">
           <span className="status-dot" aria-hidden="true" />
-          <span>{assetAvailable ? 'DIGITAL TWIN ONLINE' : 'MICROMOUSE VISUALISATION'}</span>
+          <span>{systemStatus}</span>
         </div>
 
         <div className="topbar__actions">
@@ -109,14 +114,24 @@ export function StoryOverlay({
       </nav>
 
       {activeChapter === 3 && (
-        <div className="signal-chain" aria-label="Micromouse control pipeline">
-          {['SENSE', 'ESTIMATE', 'FOLLOW', 'DRIVE'].map((stage, index) => (
-            <div className="signal-chain__stage" key={stage}>
-              <span>{String(index + 1).padStart(2, '0')}</span>
-              <strong>{stage}</strong>
-              {index < 3 && <i aria-hidden="true" />}
-            </div>
-          ))}
+        <div className="control-loop" aria-label="Micromouse control loop: sense, think, move">
+          <span className="control-loop__label">CONTROL LOOP</span>
+          <ol>
+            {[
+              { name: 'SENSE', detail: 'observe' },
+              { name: 'THINK', detail: 'choose' },
+              { name: 'MOVE', detail: 'act' },
+            ].map((stage) => (
+              <li key={stage.name}>
+                <i aria-hidden="true" />
+                <span>
+                  <strong>{stage.name}</strong>
+                  <small>{stage.detail}</small>
+                </span>
+              </li>
+            ))}
+          </ol>
+          <span className="control-loop__feedback" aria-hidden="true">FEEDBACK</span>
         </div>
       )}
 
@@ -235,10 +250,12 @@ export function StoryOverlay({
         </div>
       )}
 
-      <div className="scroll-cue" aria-hidden="true">
-        <span>SCROLL TO NAVIGATE</span>
-        <i />
-      </div>
+      {!isExploreChapter && (
+        <div className="scroll-cue" aria-hidden="true">
+          <span>SCROLL TO NAVIGATE</span>
+          <i />
+        </div>
+      )}
     </div>
   );
 }

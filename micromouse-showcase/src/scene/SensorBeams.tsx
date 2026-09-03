@@ -12,7 +12,7 @@ interface SensorBeamsProps {
 // Beam tuning. These stay deliberately short and narrow so they read as local
 // ToF measurements rather than spotlights crossing the whole scene.
 const BEAM_LENGTH = 0.7;
-const BEAM_OPACITY = 0.35;
+export const SENSOR_BEAM_OPACITY = 0.5;
 // This pushes the cylinder just beyond the sensor face. Increase it slightly
 // if a future GLB export makes the beam start inside the ToF sensor casing.
 const BEAM_ORIGIN_NUDGE = 0.35;
@@ -153,15 +153,15 @@ export function SensorBeams({ activeChapter, assetAvailable }: SensorBeamsProps)
     <group ref={group} visible={activeChapter === 2}>
       <mesh ref={frontBeam}>
         <cylinderGeometry args={[0.01, 0.01, 1, 12]} />
-        <meshBasicMaterial color="#45e6ff" transparent opacity={BEAM_OPACITY} depthWrite={false} />
+        <meshBasicMaterial color="#45e6ff" transparent opacity={SENSOR_BEAM_OPACITY} depthWrite={false} />
       </mesh>
       <mesh ref={leftBeam}>
         <cylinderGeometry args={[0.01, 0.01, 1, 12]} />
-        <meshBasicMaterial color="#45e6ff" transparent opacity={BEAM_OPACITY} depthWrite={false} />
+        <meshBasicMaterial color="#45e6ff" transparent opacity={SENSOR_BEAM_OPACITY} depthWrite={false} />
       </mesh>
       <mesh ref={rightBeam}>
         <cylinderGeometry args={[0.01, 0.01, 1, 12]} />
-        <meshBasicMaterial color="#45e6ff" transparent opacity={BEAM_OPACITY} depthWrite={false} />
+        <meshBasicMaterial color="#45e6ff" transparent opacity={SENSOR_BEAM_OPACITY} depthWrite={false} />
       </mesh>
     </group>
   );

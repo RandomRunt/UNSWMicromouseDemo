@@ -48,9 +48,10 @@ flowchart TD
     App --> Card[ComponentLabel]
     Canvas --> Camera[CameraRig]
     Canvas --> Env[Lighting and SceneEnvironment]
-    Canvas --> Model{Model available?}
-    Model -->|yes| GLB[GLBMicromouse]
-    Model -->|no| Proc[ProceduralMicromouse]
+    Canvas --> Model{Model state?}
+    Model -->|checking| Loader[Loading message]
+    Model -->|available| GLB[GLBMicromouse]
+    Model -->|unavailable| Proc[ProceduralMicromouse]
     Canvas --> Effects[SensorBeams and MazeDemo]
 ```
 
@@ -65,7 +66,7 @@ flowchart TD
 | Mobile 3D view | Final-chapter mobile control | Locks page scrolling and gives touch gestures to orbit controls |
 | Theme | Saved preference or dark-mode default | CSS token system, canvas background, fog, grid, scene lighting |
 | Reduced motion | `prefers-reduced-motion` | Camera and object animation behavior |
-| GLB availability | Startup `HEAD` request | Selection between the GLB and procedural model |
+| GLB availability | Startup `HEAD` request | Loading state, then selection between the GLB and procedural model |
 | Auto-scroll enabled | Visitor control | Six-second cyclic chapter navigation |
 
 No external state library is required because this state is local, shallow, and has a single composition root.
@@ -87,6 +88,8 @@ The optional auto-scroll control keeps its own chapter cursor. While enabled, a 
 
 The final chapter enables orbit controls automatically at the page end on desktop. On mobile, visitors use an explicit **Enter 3D view** control so touch gestures cannot compete with page scrolling; leaving the mode restores normal navigation. Earlier chapters retain authored camera positions so every visitor receives the same narrative sequence.
 
+Chapter 03 returns all three ToF/LiDAR sensors to their authored model positions, then positions a scene-aligned XYZ orientation guide above the named IMU and a rotation guide beside the left encoder. The displayed guide labels are configured independently from their scene directions, and small curved arrows around all three IMU axes indicate rotation without adding another text overlay. Chapter 04 presents the broader sense-think-move feedback loop and spins both drive wheels when motion is allowed. These visual annotations follow the same named components in the GLB and procedural fallback, and wheel motion stops when reduced motion is requested.
+
 ## 3D scene architecture
 
 `ShowcaseCanvas` creates one persistent React Three Fiber canvas containing:
@@ -95,6 +98,7 @@ The final chapter enables orbit controls automatically at the page end on deskto
 - `SceneEnvironment` for fog, the floor grid, and dark-mode stars;
 - `CameraRig` for chapter camera choreography and final exploration controls;
 - `GLBMicromouse` or `ProceduralMicromouse` for the robot;
+- `InspectionGuides` for the IMU axes and encoder rotation annotation in chapter 03;
 - `SensorBeams` for the range and inertial sensing chapter;
 - `MazeDemo` for the movement chapter;
 - a Suspense fallback while asynchronous scene assets load.
@@ -103,7 +107,7 @@ The WebGL canvas is marked `aria-hidden`. Equivalent component names, story text
 
 ### 3D model contract
 
-At startup the application sends a `HEAD` request to `/models/micromouse.glb`. A valid response selects the GLB implementation; otherwise the procedural implementation provides a fully functional fallback.
+At startup the application sends a `HEAD` request to `/models/micromouse.glb`. While that request is pending, the scene shows its loading message without mounting either robot implementation. A valid response selects the GLB implementation; otherwise the procedural implementation provides a fully functional fallback.
 
 The checked-in GLB contains these stable, unique object names:
 
@@ -131,7 +135,7 @@ ball_caster_front
 ball_caster_rear
 ```
 
-`src/config/components.ts` is the presentation contract. It maps interactive mesh names to labels, descriptions, accent colors, and exploded-view offsets. Tests ensure names are unique and use lowercase ASCII with underscores.
+`src/config/components.ts` is the presentation contract. It maps interactive mesh names to labels, electronic part names where applicable, descriptions, accent colors, and exploded-view offsets. Tests ensure names are unique and use lowercase ASCII with underscores.
 
 Keeping presentation metadata outside the GLB allows the asset to be re-exported without rewriting story or UI code, provided the object names remain stable.
 
@@ -153,12 +157,6 @@ Selecting a component in the HTML index updates the same React state as selectin
 Chapter 02 presents a one-time component-selection hint until the visitor selects a part from either the robot or component index. Chapter 06 presents a matching orbit hint until the visitor first drags the camera or zooms inward. Both hints remain dismissed for the rest of the current showcase session.
 
 The theme is stored under `micromouse-theme` in `localStorage`. On the first visit, dark mode is used by default. Theme state affects both CSS custom properties and WebGL scene values.
-
-## Kiosk behavior
-
-`useKioskReset` listens for pointer, keyboard, and scroll activity. After 90 seconds without activity it clears the selected component and returns the page to the first chapter. Auto-scroll generates scroll activity, so an actively cycling unattended tour does not trigger the idle reset.
-
-The kiosk timer is deliberately client-side. It requires no server session and resets independently in every open browser tab.
 
 ## Build and deployment architecture
 
@@ -188,7 +186,7 @@ Nginx behavior:
 - JavaScript, CSS, model, image, and font assets receive a seven-day immutable cache policy;
 - missing static assets return 404 rather than the SPA shell.
 
-The runtime is read-only application content. There are no API endpoints and no persistent container volumes.
+The runtime is read-only application content. There are no API endpoints and no persistent container volumes. Vite injects the optional Cloudflare Web Analytics beacon only into production builds; development and automated browser-test pages omit it so the offline interaction contract stays deterministic. Analytics availability never gates application startup or functionality.
 
 ## Repository structure
 
@@ -240,6 +238,6 @@ The current system is intentionally deterministic. Likely extensions and their b
 | New interactive components | Add the mesh to the GLB contract and one entry in `components.ts` |
 | Alternate robot model | Preserve the object-name contract or introduce a model-specific adapter |
 | Alternate hosted deployment | Keep the static bundle and configure Vite's base path for the target URL |
-| Analytics | Add a consent-aware browser adapter; do not couple it to rendering |
+| Analytics changes | Keep production-only injection in Vite and do not couple analytics availability to rendering |
 
 If live telemetry is introduced, the static story should remain the fallback so the showcase still operates when the robot or network is unavailable.

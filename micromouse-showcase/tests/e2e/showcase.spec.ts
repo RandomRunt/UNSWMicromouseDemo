@@ -25,6 +25,7 @@ test('tells the complete six-chapter story without console errors', async ({ pag
   await expect(openingHeading).toBeVisible();
   await expect(openingHeading).toHaveText(/\S+/);
   await expect(page.getByTestId('showcase-canvas')).toBeVisible();
+  await expect(page.locator('script[data-cf-beacon]')).toHaveCount(0);
 
   for (const id of ['meet', 'inside', 'sense', 'think', 'move', 'explore']) {
     await expect(page.getByTestId(`chapter-${id}`)).toBeAttached();
@@ -33,10 +34,42 @@ test('tells the complete six-chapter story without console errors', async ({ pag
   expect(errors).toEqual([]);
 });
 
+test('keeps the loader visible until a missing model selects the fallback', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'chromium', 'Model startup state only needs one browser project');
+
+  let resolveModelCheck: () => void = () => undefined;
+  const modelCheckPending = new Promise<void>((resolve) => {
+    resolveModelCheck = resolve;
+  });
+
+  await page.route('**/models/micromouse.glb', async (route) => {
+    if (route.request().method() !== 'HEAD') {
+      await route.continue();
+      return;
+    }
+
+    await modelCheckPending;
+    await route.fulfill({ status: 404 });
+  });
+
+  await page.goto('/');
+  const canvas = page.getByTestId('showcase-canvas');
+  await expect(canvas).toHaveAttribute('data-model-source', 'loading');
+  await expect(page.getByTestId('scene-loader')).toContainText('LOADING MODEL');
+  await expect(page.getByLabel('Showcase system status')).toContainText('LOADING DIGITAL TWIN');
+
+  resolveModelCheck();
+  await expect(canvas).toHaveAttribute('data-model-source', 'procedural-fallback');
+  await expect(page.getByTestId('scene-loader')).toHaveCount(0);
+  await expect(page.getByLabel('Showcase system status')).toContainText('MICROMOUSE VISUALISATION');
+});
+
 test('supports keyboard-accessible component inspection', async ({ page }) => {
   await routeModelToProceduralFallback(page);
   await page.goto('/');
   await page.getByTestId('chapter-inside').scrollIntoViewIfNeeded();
+  const canvas = page.getByTestId('showcase-canvas');
+  await expect(canvas).toHaveAttribute('data-inspection-guides', 'false');
 
   const indexToggle = page.getByRole('button', { name: /component index/i });
   const indexPanel = page.getByTestId('component-index-panel');
@@ -53,7 +86,11 @@ test('supports keyboard-accessible component inspection', async ({ page }) => {
   await controllerButton.focus();
   await page.keyboard.press('Enter');
 
-  await expect(page.getByTestId('component-detail')).toContainText('Microcontroller');
+  const componentDetail = page.getByTestId('component-detail');
+  await expect(componentDetail).toContainText('Microcontroller');
+  await expect(componentDetail.getByLabel('Part name')).toContainText(
+    'Microcontroller unit (MCU)',
+  );
   await expect(controllerButton).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByTestId('component-hint')).toHaveCount(0);
 
@@ -65,6 +102,21 @@ test('supports keyboard-accessible component inspection', async ({ page }) => {
     await expect(indexToggle).toHaveAttribute('aria-expanded', 'false');
     await expect(indexPanel).toHaveAttribute('hidden', '');
   }
+
+  await page.getByTestId('chapter-sense').scrollIntoViewIfNeeded();
+  await expect(canvas).toHaveAttribute('data-inspection-guides', 'true');
+  await expect(page.locator('[data-axis-direction="x"]')).toHaveText('Y');
+  await expect(page.locator('[data-axis-direction="y"]')).toHaveText('Z');
+  await expect(page.locator('[data-axis-direction="z"]')).toHaveText('X');
+  await expect(page.getByText('ENCODER ROTATION')).toHaveCount(0);
+
+  await page.getByTestId('chapter-think').scrollIntoViewIfNeeded();
+  await expect(page.getByLabel(/Micromouse control loop/)).toContainText(/SENSE.*THINK.*MOVE/);
+  await expect(canvas).toHaveAttribute('data-wheel-motion', 'true');
+  await expect(page.locator('.inspection-axis-label')).toHaveCount(0);
+
+  await page.getByTestId('chapter-explore').scrollIntoViewIfNeeded();
+  await expect(page.getByText('SCROLL TO NAVIGATE')).toHaveCount(0);
 });
 
 test('enables 360-degree controls at the desktop page end or through mobile 3D view', async ({ page }) => {
@@ -243,6 +295,11 @@ test('keeps every chapter and overlay readable on iPhone-sized screens', async (
   await expect(indexToggle).toHaveAttribute('aria-expanded', 'false');
   const detail = page.getByTestId('component-detail');
   await expect(detail).toHaveAttribute('data-positioned', 'true');
+  await expect(detail.getByLabel('Part name')).toContainText('Microcontroller unit (MCU)');
+  const mobileDetailTextSize = await detail.locator('p').evaluate(
+    (paragraph) => Number.parseFloat(getComputedStyle(paragraph).fontSize),
+  );
+  expect(mobileDetailTextSize).toBeLessThan(14);
   const detailBounds = await detail.boundingBox();
   const topbarBounds = await page.locator('.topbar').boundingBox();
   expect(detailBounds).not.toBeNull();

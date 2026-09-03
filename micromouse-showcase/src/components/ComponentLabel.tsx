@@ -156,6 +156,12 @@ export function ComponentLabel({ selected, anchorRef, onClose }: ComponentLabelP
           <span className="component-card__code">SYS / {component.shortLabel}</span>
           <h2>{component.title}</h2>
           <p>{component.description}</p>
+          {component.electronicName && (
+            <div className="component-card__part-name" aria-label="Part name">
+              <span>Part name</span>
+              <strong>{component.electronicName}</strong>
+            </div>
+          )}
         </div>
         <button className="icon-button" type="button" onClick={onClose} aria-label="Close component details">
           ×

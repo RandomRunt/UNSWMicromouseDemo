@@ -5,6 +5,9 @@ export const senseChapterAssembledComponentIds = [
   'oled_display',
   'ball_caster_front',
   'ball_caster_rear',
+  'tof_left',
+  'tof_front',
+  'tof_right',
 ] as const satisfies readonly ComponentId[];
 
 const SENSE_CHAPTER_ASSEMBLED_COMPONENTS = new Set<ComponentId>(
@@ -12,8 +15,8 @@ const SENSE_CHAPTER_ASSEMBLED_COMPONENTS = new Set<ComponentId>(
 );
 
 export function getExplodeAmount(activeChapter: number) {
-  // Chapter 03 keeps the chapter 02 teardown in place so the sensing hardware
-  // remains separated and legible while its measurements are introduced.
+  // Chapter 03 keeps most of the chapter 02 teardown in place so the internal
+  // sensing hardware remains separated and legible while it is introduced.
   return activeChapter === 1 || activeChapter === 2 ? 1 : 0;
 }
 
@@ -24,11 +27,16 @@ export function getComponentExplodeAmount(activeChapter: number, componentId: Co
 
 const STORY_CHAPTER_COUNT = 6;
 const STORY_SCROLL_INTERVAL_COUNT = STORY_CHAPTER_COUNT - 1;
+export const THINK_CHAPTER_INDEX = 3;
 const MOVE_CHAPTER_INDEX = 4;
 const MAZE_VISIBLE_START = MOVE_CHAPTER_INDEX / STORY_CHAPTER_COUNT;
 const MAZE_COLLAPSE_START = MOVE_CHAPTER_INDEX / STORY_SCROLL_INTERVAL_COUNT;
 const MAZE_COLLAPSE_END = (MOVE_CHAPTER_INDEX + 0.5) / STORY_SCROLL_INTERVAL_COUNT;
 export const MIN_SCENE_SCALE = 0.001;
+
+export function shouldSpinWheels(activeChapter: number, reducedMotion: boolean) {
+  return activeChapter === THINK_CHAPTER_INDEX && !reducedMotion;
+}
 
 export function getMazeScrollScale(progress: number) {
   if (progress < MAZE_VISIBLE_START || progress >= MAZE_COLLAPSE_END) {
