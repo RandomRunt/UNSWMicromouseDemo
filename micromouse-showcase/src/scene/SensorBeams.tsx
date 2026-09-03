@@ -11,7 +11,7 @@ interface SensorBeamsProps {
 
 // Beam tuning. These stay deliberately short and narrow so they read as local
 // ToF measurements rather than spotlights crossing the whole scene.
-const BEAM_LENGTH = 0.7;
+const BEAM_LENGTH = 0.9;
 export const SENSOR_BEAM_OPACITY = 0.5;
 // This pushes the cylinder just beyond the sensor face. Increase it slightly
 // if a future GLB export makes the beam start inside the ToF sensor casing.
