@@ -157,6 +157,27 @@ test('enables 360-degree controls at the desktop page end or through mobile 3D v
   await expect(canvas).toHaveAttribute('data-exploration-enabled', 'true');
 });
 
+test('allows touch scrolling through the story on mobile', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-chromium', 'Touch scrolling only applies to mobile');
+  await routeModelToProceduralFallback(page);
+  await page.goto('/');
+
+  const client = await page.context().newCDPSession(page);
+  await client.send('Input.dispatchTouchEvent', {
+    type: 'touchStart',
+    touchPoints: [{ x: 195, y: 620, id: 1 }],
+  });
+  for (const y of [560, 500, 440, 380, 320, 260]) {
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: [{ x: 195, y, id: 1 }],
+    });
+  }
+  await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(100);
+});
+
 test('dismisses the orbit controls hint after a drag or inward zoom', async ({ page }) => {
   await routeModelToProceduralFallback(page);
   await page.goto('/');

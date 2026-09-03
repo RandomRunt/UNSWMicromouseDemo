@@ -145,12 +145,13 @@ html[data-mobile-3d-view="true"] .canvas-shell canvas {
   touch-action: none !important;
 }
 
-@media (hover: none) and (pointer: coarse) {
+@media (max-width: 640px) {
   html,
   body {
     overscroll-behavior-y: none;
   }
 
+  .canvas-shell,
   .canvas-shell canvas {
     touch-action: pan-y !important;
   }
