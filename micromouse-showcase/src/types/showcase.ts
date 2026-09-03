@@ -6,6 +6,8 @@ export type ChapterId =
   | 'move'
   | 'explore';
 
+export type ModelAvailability = 'checking' | 'available' | 'unavailable';
+
 export type ComponentId =
   | 'chassis'
   | 'bottom_pcb'
@@ -43,6 +45,7 @@ export interface ComponentDefinition {
   meshName: string;
   title: string;
   shortLabel: string;
+  electronicName?: string;
   description: string;
   accent: string;
   explodeOffset: [number, number, number];

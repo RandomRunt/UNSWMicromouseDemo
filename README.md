@@ -1,11 +1,15 @@
 # UNSW Micromouse Demo Day
 
+**[Open the live Micromouse 3D showcase](https://randomrunt.github.io/UNSWMicromouseDemo/)**
+
 This repository brings together the robot-control software and interactive presentation material for a UNSW Micromouse demonstration. Its two primary robot implementations solve the same maze-driving problem in different ways:
 
 1. **Discrete movement** executes explicit forward legs and stationary turns.
 2. **EKF-based continuous movement** estimates the robot's pose and follows a waypoint path with pure pursuit.
 
-The repository also contains a Dockerized 3D showcase website that explains the robot, its sensors, its control pipeline, and its motion to visitors. The website is an offline presentation; it does not currently send commands to the physical robot or receive live telemetry.
+An HC-06-enabled variant of the discrete controller also streams route and sensor events over Bluetooth for demonstration monitoring.
+
+The repository also contains a static 3D showcase website that can run from GitHub Pages or a Dockerized Nginx server. It explains the robot, its sensors, its control pipeline, and its motion to visitors, but does not send commands to the physical robot or receive live telemetry.
 
 For a detailed comparison of every retained implementation, see [IMPLEMENTATIONS.md](IMPLEMENTATIONS.md).
 
@@ -14,6 +18,7 @@ For a detailed comparison of every retained implementation, see [IMPLEMENTATIONS
 | Path | Role |
 |---|---|
 | [`DemoBotDiscreteMove/`](DemoBotDiscreteMove/) | Primary discrete-motion implementation for the DemoBot hardware |
+| [`DemoBotDiscreteMoveBluetooth/`](DemoBotDiscreteMoveBluetooth/) | Discrete-motion variant with one-way HC-06 event and sensor telemetry |
 | [`DemoBotPPEKF/`](DemoBotPPEKF/) | Primary continuous pure-pursuit and EKF implementation |
 | [`DemoBotPinDetails4.1/`](DemoBotPinDetails4.1/) | Earlier Task 4.1-style controller and hardware baseline |
 | [`Best_Micromouse_Implementations_26T2/`](Best_Micromouse_Implementations_26T2/) | Full reference implementations, computer-vision work, mapping tools, and generated route/map data |
@@ -110,6 +115,10 @@ const char ROUTE[] PROGMEM =
 ```
 
 Each tuple is `(clockwise turn degrees, forward distance millimetres)`. Tuple legs use encoder distance and IMU heading without LiDAR wall correction, so cylindrical obstacles are not mistaken for maze walls. The parser validates syntax, numeric limits, and route structure before the motors run.
+
+### Bluetooth telemetry variant
+
+[`DemoBotDiscreteMoveBluetooth/`](DemoBotDiscreteMoveBluetooth/) retains the discrete controller and adds an HC-06 serial link on Arduino pins D4 and D5 at 9600 baud. It reports hardware status, route progress, movement targets, heading, encoder rotations, and three LiDAR readings. The link is output-only: the checked-in sketch starts its compile-time route automatically and does not accept remote drive commands. See the [Bluetooth variant README](DemoBotDiscreteMoveBluetooth/README.md) for wiring and message details.
 
 ### Important files
 
@@ -248,12 +257,16 @@ It uses **React with Vite**, not Next.js. Node.js exists only in the build stage
 
 ```mermaid
 flowchart TD
-    Request[Browser requests localhost:8080] --> Nginx[Nginx serves static Vite bundle]
-    Nginx --> React[React application starts in browser]
-    React --> Check[HEAD /models/micromouse.glb]
+    Request[Browser requests showcase] --> Host{Hosting target}
+    Host --> Pages[GitHub Pages]
+    Host --> Nginx[Nginx at localhost:8080]
+    Pages --> React[React application starts in browser]
+    Nginx --> React
+    React --> Check[HEAD base-path/models/micromouse.glb]
     Check -->|asset exists| GLB[Load named GLB meshes]
     Check -->|asset absent| Procedural[Build procedural Micromouse]
     Scroll[Scroll and resize events] --> Progress[Normalized progress + active chapter]
+    Auto[Optional six-second auto-scroll] --> Progress
     Progress --> DOM[Story text, chapter rail, component index]
     Progress --> R3F[React Three Fiber scene]
     DOM <-->|selection and theme state| R3F
@@ -266,9 +279,9 @@ The page has two synchronized presentation layers:
 - **Semantic HTML** contains the story, chapter navigation, theme switch, component buttons, detail cards, focus behavior, and screen-reader announcements.
 - **WebGL** renders the robot, camera movement, exploded offsets, sensor beams, maze path, lighting, and final orbit controls.
 
-`App.tsx` owns the shared chapter, selection, asset, reduced-motion, and theme state. Native scroll position is normalized from 0 to 1, and the active chapter drives both the DOM presentation and the 3D choreography. Selecting a component through HTML or the 3D model updates the same component state.
+`App.tsx` owns the shared chapter, selection, asset, reduced-motion, theme, and auto-scroll state. Native scroll position is normalized from 0 to 1, and the active chapter drives both the DOM presentation and the 3D choreography. Selecting a component through HTML or the 3D model updates the same component state. The optional auto-scroll control advances to the next chapter every six seconds and loops back to the first chapter after the final one.
 
-At startup, the app checks for `public/models/micromouse.glb`. If it is unavailable, a deterministic procedural robot keeps the complete experience operational. A supplied GLB must follow the documented mesh-name contract.
+At startup, the app checks for the exported digital twin at `public/models/micromouse.glb`. If it is unavailable, a deterministic procedural robot keeps the complete experience operational. The GLB must follow the documented mesh-name contract.
 
 Light and graphite-grey dark themes affect both CSS and the 3D environment. The visitor's choice is saved in browser storage. Reduced-motion preferences limit animation, and a 90-second inactivity timer resets the kiosk.
 
@@ -299,9 +312,9 @@ cd micromouse-showcase
 docker compose up --build -d
 ```
 
-Open `http://localhost:8080`. See the [showcase Docker guide](micromouse-showcase/README.md) for operation and troubleshooting, and the [website architecture README](micromouse-showcase/docs/architecture/README.md) for the full runtime, scene, accessibility, model, testing, and deployment design.
+Open `http://localhost:8080`, or use the [live GitHub Pages deployment](https://randomrunt.github.io/UNSWMicromouseDemo/). See the [showcase operation guide](micromouse-showcase/README.md) for local and hosted deployment details, and the [website architecture README](micromouse-showcase/docs/architecture/README.md) for the full runtime, scene, accessibility, model, testing, and deployment design.
 
-The website CI workflow installs locked dependencies, runs unit and Chromium browser tests, builds the Vite application, builds the Docker image, and publishes tagged images to GitHub Container Registry after successful pushes to `main`.
+The website workflow installs locked dependencies, runs unit and Chromium browser tests, builds the Vite application and Docker image, and then publishes both a GitHub Pages artifact and tagged GitHub Container Registry images after successful pushes to `main`. The Pages build uses `/UNSWMicromouseDemo/` as its Vite base path; local and Docker builds continue to use `/`.
 
 ## Reference implementations and supporting work
 
@@ -317,6 +330,7 @@ These folders are valuable references, but their hardware pins, sensor order, ge
 ## Suggested starting points
 
 - To understand or tune stop-and-turn behavior, start with [`DemoBotDiscreteMove/DemoBotDiscreteMove.ino`](DemoBotDiscreteMove/DemoBotDiscreteMove.ino).
+- To monitor the discrete controller over an HC-06 link, read [`DemoBotDiscreteMoveBluetooth/README.md`](DemoBotDiscreteMoveBluetooth/README.md).
 - To study continuous estimation and control, start with [`DemoBotPPEKF/README.md`](DemoBotPPEKF/README.md), then follow `DemoBotPPEKF.ino` through `StateEstimator`, `PurePursuit`, and `VelocityController`.
 - To compare all retained controllers and route formats, read [IMPLEMENTATIONS.md](IMPLEMENTATIONS.md).
 - To operate the visitor-facing site, read [`micromouse-showcase/README.md`](micromouse-showcase/README.md).

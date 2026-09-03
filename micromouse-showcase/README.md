@@ -6,6 +6,19 @@ The production container is self-contained: it does not need a database, robot c
 
 For implementation details, see the [system architecture](docs/architecture/README.md). For the CAD-to-GLB workflow, see [FUSION_TO_WEB_WORKFLOW.md](FUSION_TO_WEB_WORKFLOW.md).
 
+**[Open the live GitHub Pages showcase](https://randomrunt.github.io/UNSWMicromouseDemo/)**
+
+## Hosted deployment
+
+The GitHub Actions workflow deploys the static site to GitHub Pages after the test and build jobs pass on a push to `main`. It can also be run manually with `workflow_dispatch`. The hosted build sets the Vite base path to `/UNSWMicromouseDemo/`, while local development and Docker builds use `/`.
+
+The same workflow publishes the container image to GitHub Container Registry on successful pushes to `main`:
+
+```text
+ghcr.io/randomrunt/micromouse-showcase:latest
+ghcr.io/randomrunt/micromouse-showcase:<commit-sha>
+```
+
 ## Run with Docker Compose
 
 ### Requirements
@@ -127,13 +140,13 @@ Replace `HOST_IP` with the showcase computer's local IP address. The host firewa
 
 ## 3D model selection
 
-The site checks for this file at startup:
+The checked-in digital twin is stored at this path, which the site checks at startup:
 
 ```text
 public/models/micromouse.glb
 ```
 
-- If the file exists, the application loads the exported digital twin.
+- If the file is available, the application loads the exported digital twin.
 - If it is absent, the deterministic procedural Micromouse is displayed.
 
 Place or replace the GLB before building the Docker image, then rebuild the container. The interactive object names must match the contract in [the architecture documentation](docs/architecture/README.md#3d-model-contract).
@@ -141,11 +154,10 @@ Place or replace the GLB before building the Docker image, then rebuild the cont
 ## Showcase operation
 
 - Scroll through all six story chapters.
+- Select **Auto scroll** to advance one chapter every six seconds and loop continuously; select **Stop** to return to manual navigation.
 - Select components from the component index to inspect them.
 - Use the top-right switch to choose light or graphite-grey dark mode. The choice is stored in that browser.
 - The final chapter enables orbit and zoom controls.
-- After 90 seconds without pointer, keyboard, or scroll activity, the kiosk returns to the first chapter.
-- Use **Restart tour** to reset it manually.
 
 For an unattended display, start the container before the event and open `http://localhost:8080` in the browser's full-screen or kiosk mode. The Compose service uses `restart: unless-stopped`, so Docker restarts the container after a machine or daemon restart.
 
@@ -167,6 +179,13 @@ npm run build
 npm test
 npx playwright install chromium
 npm run test:e2e
+```
+
+To reproduce the GitHub Pages build locally:
+
+```powershell
+$env:VITE_BASE_PATH = '/UNSWMicromouseDemo/'
+npm run build
 ```
 
 ## Troubleshooting

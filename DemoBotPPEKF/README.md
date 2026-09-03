@@ -1,7 +1,7 @@
 # DemoBot PPEKF
 
 This sketch adapts `F12A_T03-Micromouse-TaperedPPEKF` to the hardware and
-compact coding conventions of `DemoBot-Task4.1V2`.
+compact coding conventions of `DemoBotPinDetails4.1`.
 
 The navigation chain is:
 
@@ -57,7 +57,8 @@ metric waypoint array used by pure pursuit. Uppercase commands and whitespace
 are accepted. An invalid command, a route with no `f`, or more than 47 forward
 moves fails safely and leaves the motors stopped.
 
-The default string, `flflfrfrffrfff`, reproduces A's original route. Unlike the
+The checked-in string selects the right-side Robotics@UNSW showcase route; a
+left-side route is retained as a commented alternative beside it. Unlike the
 discrete mover, `l` and `r` do not execute stationary turns: they set the
 direction of the next waypoint, and pure pursuit rounds the resulting corner.
 Tuple commands such as `[(58.1,287.4), ...]` are not supported.
