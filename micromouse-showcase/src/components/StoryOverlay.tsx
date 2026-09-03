@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { ArrowRight, ArrowUp } from 'lucide-react';
 import { componentDefinitions } from '../config/components';
 import { chapters } from '../story/chapters';
 import type { ComponentId, ModelAvailability } from '../types/showcase';
@@ -115,23 +116,31 @@ export function StoryOverlay({
 
       {activeChapter === 3 && (
         <div className="control-loop" aria-label="Micromouse control loop: sense, think, move">
-          <span className="control-loop__label">CONTROL LOOP</span>
+          <div className="control-loop__header" aria-hidden="true">
+            <span className="control-loop__label"><i />CONTROL LOOP</span>
+            <small>04 // DECISION</small>
+          </div>
           <ol>
             {[
-              { name: 'SENSE', detail: 'observe' },
-              { name: 'THINK', detail: 'choose' },
-              { name: 'MOVE', detail: 'act' },
+              { number: '01', name: 'SENSE' },
+              { number: '02', name: 'THINK' },
+              { number: '03', name: 'MOVE' },
             ].map((stage) => (
               <li key={stage.name}>
-                <i aria-hidden="true" />
-                <span>
-                  <strong>{stage.name}</strong>
-                  <small>{stage.detail}</small>
-                </span>
+                <small aria-hidden="true">{stage.number}</small>
+                <strong>{stage.name}</strong>
+                {stage.number !== '03' && (
+                  <ArrowRight className="control-loop__stage-arrow" aria-hidden="true" />
+                )}
               </li>
             ))}
           </ol>
-          <span className="control-loop__feedback" aria-hidden="true">FEEDBACK</span>
+          <div className="control-loop__feedback" aria-hidden="true">
+            <div className="control-loop__feedback-path">
+              <ArrowUp />
+              <span>FEEDBACK</span>
+            </div>
+          </div>
         </div>
       )}
 

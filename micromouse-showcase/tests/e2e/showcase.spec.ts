@@ -55,7 +55,7 @@ test('keeps the loader visible until a missing model selects the fallback', asyn
   await page.goto('/');
   const canvas = page.getByTestId('showcase-canvas');
   await expect(canvas).toHaveAttribute('data-model-source', 'loading');
-  await expect(page.getByTestId('scene-loader')).toContainText('LOADING MODEL');
+  await expect(page.getByTestId('scene-loader')).toContainText('LOADING MODEL...');
   await expect(page.getByLabel('Showcase system status')).toContainText('LOADING DIGITAL TWIN');
 
   resolveModelCheck();
@@ -88,9 +88,7 @@ test('supports keyboard-accessible component inspection', async ({ page }) => {
 
   const componentDetail = page.getByTestId('component-detail');
   await expect(componentDetail).toContainText('Microcontroller');
-  await expect(componentDetail.getByLabel('Part name')).toContainText(
-    'Microcontroller unit (MCU)',
-  );
+  await expect(componentDetail.getByLabel('Part name')).toContainText('Arduino Nano');
   await expect(controllerButton).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByTestId('component-hint')).toHaveCount(0);
 
@@ -295,7 +293,7 @@ test('keeps every chapter and overlay readable on iPhone-sized screens', async (
   await expect(indexToggle).toHaveAttribute('aria-expanded', 'false');
   const detail = page.getByTestId('component-detail');
   await expect(detail).toHaveAttribute('data-positioned', 'true');
-  await expect(detail.getByLabel('Part name')).toContainText('Microcontroller unit (MCU)');
+  await expect(detail.getByLabel('Part name')).toContainText('Arduino Nano');
   const mobileDetailTextSize = await detail.locator('p').evaluate(
     (paragraph) => Number.parseFloat(getComputedStyle(paragraph).fontSize),
   );

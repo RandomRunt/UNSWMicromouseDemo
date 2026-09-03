@@ -23,6 +23,11 @@ const cameraKeyframes: Array<[number, number, number]> = [
   [4.8, 3.2, 5.2],
 ];
 
+const DESKTOP_SENSE_CAMERA: [number, number, number] = [4.4, 2.7, 4.9];
+const DESKTOP_BREAKPOINT = 960;
+const GUIDED_TARGET_Y = 0.35;
+const DESKTOP_SENSE_TARGET_Y = 0.6;
+
 export function CameraRig({
   progress,
   explorationEnabled,
@@ -30,9 +35,9 @@ export function CameraRig({
   onOrbitInteraction,
   reducedMotion,
 }: CameraRigProps) {
-  const { camera } = useThree();
+  const { camera, size } = useThree();
   // All guided camera views look at this point. Raising Y aims higher on the robot.
-  const target = useMemo(() => new THREE.Vector3(0, 0.35, 0), []);
+  const target = useMemo(() => new THREE.Vector3(0, GUIDED_TARGET_Y, 0), []);
   const controlsTarget = useMemo(() => new THREE.Vector3(0, 0.2, 0), []);
   const desired = useMemo(() => new THREE.Vector3(), []);
   const isUsingControlsRef = useRef(false);
@@ -81,13 +86,17 @@ export function CameraRig({
     const index = Math.min(cameraKeyframes.length - 1, Math.floor(chapterProgress));
     const nextIndex = Math.min(cameraKeyframes.length - 1, index + 1);
     const local = reducedMotion ? 0 : chapterProgress - index;
-    const from = cameraKeyframes[index];
-    const to = cameraKeyframes[nextIndex];
+    const desktopView = size.width > DESKTOP_BREAKPOINT;
+    const from = desktopView && index === 2 ? DESKTOP_SENSE_CAMERA : cameraKeyframes[index];
+    const to = desktopView && nextIndex === 2 ? DESKTOP_SENSE_CAMERA : cameraKeyframes[nextIndex];
     desired.set(
       THREE.MathUtils.lerp(from[0], to[0], local),
       THREE.MathUtils.lerp(from[1], to[1], local),
       THREE.MathUtils.lerp(from[2], to[2], local),
     );
+    const fromTargetY = desktopView && index === 2 ? DESKTOP_SENSE_TARGET_Y : GUIDED_TARGET_Y;
+    const toTargetY = desktopView && nextIndex === 2 ? DESKTOP_SENSE_TARGET_Y : GUIDED_TARGET_Y;
+    target.y = THREE.MathUtils.lerp(fromTargetY, toTargetY, local);
     // 3.8 controls guided camera transition speed; a larger value settles faster.
     camera.position.lerp(desired, 1 - Math.exp(-delta * (reducedMotion ? 18 : 3.8)));
     camera.lookAt(target);
