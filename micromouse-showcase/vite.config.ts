@@ -1,5 +1,5 @@
-import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vitest/config';
 
 const CLOUDFLARE_ANALYTICS_URL = 'https://static.cloudflareinsights.com/beacon.min.js';
 const CLOUDFLARE_ANALYTICS_TOKEN = 'cf409fe6f5e944d1ae674a7c10a6e082';
@@ -19,7 +19,7 @@ export default defineConfig({
           {
             tag: 'script',
             attrs: {
-              defer: true,
+              type: 'module',
               src: CLOUDFLARE_ANALYTICS_URL,
               'data-cf-beacon': JSON.stringify({ token: CLOUDFLARE_ANALYTICS_TOKEN }),
             },
