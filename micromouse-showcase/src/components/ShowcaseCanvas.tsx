@@ -23,6 +23,7 @@ interface ShowcaseCanvasProps {
   activeChapter: number;
   explorationEnabled: boolean;
   explorationExploded: boolean;
+  easterEggSpinActive: boolean;
   selected: ComponentId | null;
   onSelect: (id: ComponentId) => void;
   onClearSelection: () => void;
@@ -33,6 +34,7 @@ interface ShowcaseCanvasProps {
   modelAvailability: ModelAvailability;
   theme: ThemeMode;
   componentAnchorRef: ComponentScreenAnchorRef;
+  viewResetKey: number;
 }
 
 function ResponsiveRobotScale({ children }: { children: ReactNode }) {
@@ -47,6 +49,7 @@ export function ShowcaseCanvas({
   activeChapter,
   explorationEnabled,
   explorationExploded,
+  easterEggSpinActive,
   selected,
   onSelect,
   onClearSelection,
@@ -57,6 +60,7 @@ export function ShowcaseCanvas({
   modelAvailability,
   theme,
   componentAnchorRef,
+  viewResetKey,
 }: ShowcaseCanvasProps) {
   // Chapter 06 stays assembled by default. Its button temporarily gives only
   // the robot model chapter 02's full teardown amount; the camera, maze and
@@ -95,6 +99,7 @@ export function ShowcaseCanvas({
           onInspectionInput={onInspectionInput}
           onOrbitInteraction={onOrbitInteraction}
           reducedMotion={reducedMotion}
+          viewResetKey={viewResetKey}
         />
         <Suspense fallback={<SceneLoader />}>
           {modelAvailability === 'checking' ? (
@@ -108,6 +113,7 @@ export function ShowcaseCanvas({
                     selected={selected}
                     onSelect={onSelect}
                     reducedMotion={reducedMotion}
+                    easterEggSpinActive={easterEggSpinActive}
                   />
                 ) : (
                   <ProceduralMicromouse
@@ -115,6 +121,7 @@ export function ShowcaseCanvas({
                     selected={selected}
                     onSelect={onSelect}
                     reducedMotion={reducedMotion}
+                    easterEggSpinActive={easterEggSpinActive}
                   />
                 )}
               </ResponsiveRobotScale>
@@ -140,10 +147,6 @@ export function ShowcaseCanvas({
       <div
         className={`canvas-vignette${inspectionActive ? ' canvas-vignette--inspection-active' : ''}`}
       />
-      <div className="canvas-reticle" aria-hidden="true">
-        <span />
-        <i />
-      </div>
     </div>
   );
 }

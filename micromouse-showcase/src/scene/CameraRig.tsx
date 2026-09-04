@@ -1,6 +1,6 @@
 import { OrbitControls } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, type ElementRef } from 'react';
 import * as THREE from 'three';
 
 interface CameraRigProps {
@@ -9,6 +9,7 @@ interface CameraRigProps {
   onInspectionInput: () => void;
   onOrbitInteraction: () => void;
   reducedMotion: boolean;
+  viewResetKey: number;
 }
 
 // One [X, Y, Z] camera position per story chapter. I adjust these when a
@@ -27,6 +28,7 @@ const DESKTOP_SENSE_CAMERA: [number, number, number] = [4.4, 2.7, 4.9];
 const DESKTOP_BREAKPOINT = 960;
 const GUIDED_TARGET_Y = 0.35;
 const DESKTOP_SENSE_TARGET_Y = 0.6;
+const RESET_VIEW_DURATION_SECONDS = 0.6;
 
 export function CameraRig({
   progress,
@@ -34,22 +36,82 @@ export function CameraRig({
   onInspectionInput,
   onOrbitInteraction,
   reducedMotion,
+  viewResetKey,
 }: CameraRigProps) {
-  const { camera, size } = useThree();
+  const { camera, scene, size } = useThree();
   // All guided camera views look at this point. Raising Y aims higher on the robot.
   const target = useMemo(() => new THREE.Vector3(0, GUIDED_TARGET_Y, 0), []);
-  const controlsTarget = useMemo(() => new THREE.Vector3(0, 0.2, 0), []);
+  // Match the guided camera's target exactly so enabling OrbitControls does
+  // not re-aim the camera and make the robot jump vertically on screen.
+  const controlsTarget = useMemo(() => new THREE.Vector3(0, GUIDED_TARGET_Y, 0), []);
   const desired = useMemo(() => new THREE.Vector3(), []);
   const isUsingControlsRef = useRef(false);
   const hasReportedInteractionRef = useRef(false);
   const interactionStartOffsetRef = useRef(new THREE.Vector3());
   const currentOffsetRef = useRef(new THREE.Vector3());
+  const controlsRef = useRef<ElementRef<typeof OrbitControls>>(null);
+  const isResettingViewRef = useRef(false);
+  const resetElapsedRef = useRef(0);
+  const resetStartPositionRef = useRef(new THREE.Vector3());
+  const resetStartTargetRef = useRef(new THREE.Vector3());
+  const wasExplorationEnabledRef = useRef(explorationEnabled);
+  const resetPosition = useMemo(
+    () => new THREE.Vector3(...cameraKeyframes[cameraKeyframes.length - 1]),
+    [],
+  );
+  const resetTarget = useMemo(() => new THREE.Vector3(0, GUIDED_TARGET_Y, 0), []);
+
+  useEffect(() => {
+    const orbitTarget = controlsRef.current?.target ?? controlsTarget;
+
+    if (!explorationEnabled) {
+      if (wasExplorationEnabledRef.current) {
+        resetTarget.set(0, GUIDED_TARGET_Y, 0);
+        resetPosition.set(...cameraKeyframes[cameraKeyframes.length - 1]);
+        resetStartPositionRef.current.copy(camera.position);
+        resetStartTargetRef.current.copy(orbitTarget);
+        resetElapsedRef.current = 0;
+        isResettingViewRef.current = true;
+      }
+      wasExplorationEnabledRef.current = false;
+      return;
+    }
+
+    wasExplorationEnabledRef.current = true;
+
+    const model = scene.getObjectByName('showcase_model_root')
+      ?? scene.getObjectByName('mouse_root');
+    if (!model) return;
+
+    const modelCenter = new THREE.Box3().setFromObject(model).getCenter(new THREE.Vector3());
+    const targetOffset = modelCenter.sub(new THREE.Vector3(0, GUIDED_TARGET_Y, 0));
+    resetTarget.set(0, GUIDED_TARGET_Y, 0).add(targetOffset);
+    resetPosition
+      .set(...cameraKeyframes[cameraKeyframes.length - 1])
+      .add(targetOffset);
+    resetStartPositionRef.current.copy(camera.position);
+    resetStartTargetRef.current.copy(orbitTarget);
+    resetElapsedRef.current = 0;
+    isResettingViewRef.current = true;
+  }, [camera, controlsTarget, explorationEnabled, resetPosition, resetTarget, scene]);
+
+  useEffect(() => {
+    if (viewResetKey === 0) return;
+
+    resetStartPositionRef.current.copy(camera.position);
+    resetStartTargetRef.current.copy(controlsRef.current?.target ?? controlsTarget);
+    resetElapsedRef.current = 0;
+    isResettingViewRef.current = true;
+  }, [camera, controlsTarget, viewResetKey]);
 
   const handleControlStart = useCallback(() => {
     if (!explorationEnabled) return;
+    isResettingViewRef.current = false;
     isUsingControlsRef.current = true;
     hasReportedInteractionRef.current = false;
-    interactionStartOffsetRef.current.copy(camera.position).sub(controlsTarget);
+    interactionStartOffsetRef.current
+      .copy(camera.position)
+      .sub(controlsRef.current?.target ?? controlsTarget);
     onInspectionInput();
   }, [camera, controlsTarget, explorationEnabled, onInspectionInput]);
 
@@ -60,7 +122,9 @@ export function CameraRig({
     if (hasReportedInteractionRef.current) return;
 
     const startOffset = interactionStartOffsetRef.current;
-    const currentOffset = currentOffsetRef.current.copy(camera.position).sub(controlsTarget);
+    const currentOffset = currentOffsetRef.current
+      .copy(camera.position)
+      .sub(controlsRef.current?.target ?? controlsTarget);
     const startDistance = startOffset.length();
     const currentDistance = currentOffset.length();
     const zoomedIn = currentDistance < startDistance - 0.01;
@@ -81,6 +145,27 @@ export function CameraRig({
   }, [onInspectionInput]);
 
   useFrame((_, delta) => {
+    if (isResettingViewRef.current) {
+      const orbitTarget = controlsRef.current?.target ?? controlsTarget;
+      resetElapsedRef.current += delta;
+      const progress = Math.min(1, resetElapsedRef.current / RESET_VIEW_DURATION_SECONDS);
+      // Smootherstep starts and finishes at zero velocity, avoiding a visible jump.
+      const easing = progress * progress * progress * (
+        progress * (progress * 6 - 15) + 10
+      );
+      camera.position.lerpVectors(resetStartPositionRef.current, resetPosition, easing);
+      orbitTarget.lerpVectors(resetStartTargetRef.current, resetTarget, easing);
+      controlsRef.current?.update();
+
+      if (progress >= 1) {
+        camera.position.copy(resetPosition);
+        orbitTarget.copy(resetTarget);
+        controlsRef.current?.update();
+        isResettingViewRef.current = false;
+      }
+      return;
+    }
+
     if (explorationEnabled) return;
     const chapterProgress = progress * cameraKeyframes.length;
     const index = Math.min(cameraKeyframes.length - 1, Math.floor(chapterProgress));
@@ -104,14 +189,11 @@ export function CameraRig({
 
   return (
     <OrbitControls
+      ref={controlsRef}
       enabled={explorationEnabled}
-      enablePan={false}
-      // These are the closest/furthest zoom distances allowed in free inspection.
-      minDistance={2}
+      enablePan
+      // Keep wheel/pinch zoom close enough that the robot remains the focus.
       maxDistance={9}
-      // Polar angles limit how far visitors can orbit over or under the robot.
-      minPolarAngle={0.15}
-      maxPolarAngle={2.75}
       // Keep this close to the guided target above so the handover feels natural.
       target={controlsTarget}
       onStart={handleControlStart}

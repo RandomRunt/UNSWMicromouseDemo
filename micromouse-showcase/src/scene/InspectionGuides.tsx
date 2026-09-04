@@ -165,22 +165,22 @@ export function InspectionGuides({ activeChapter, assetAvailable }: InspectionGu
         rotation={[0, Math.PI / 2, 0]}
       >
         <mesh>
-          <torusGeometry args={[0.19, 0.011, 8, 40, Math.PI * 1.55]} />
+          <torusGeometry args={[0.19, 0.018, 8, 40, Math.PI * 1.55]} />
           <meshBasicMaterial
-            color="#f2f0e8"
+            color="#ffb800"
             transparent
-            opacity={SENSOR_BEAM_OPACITY}
+            opacity={0.95}
             depthTest={false}
             depthWrite={false}
             toneMapped={false}
           />
         </mesh>
         <mesh position={[0.03, -0.187, 0]} rotation={[0, 0, -Math.PI * 0.45]}>
-          <coneGeometry args={[0.03, 0.085, 12]} />
+          <coneGeometry args={[0.042, 0.11, 12]} />
           <meshBasicMaterial
-            color="#f2f0e8"
+            color="#ffb800"
             transparent
-            opacity={SENSOR_BEAM_OPACITY}
+            opacity={0.95}
             depthTest={false}
             depthWrite={false}
             toneMapped={false}
