@@ -617,6 +617,7 @@ html[data-mobile-3d-view="true"] .canvas-shell canvas {
 
 .component-index__label {
   display: block;
+  color: #fff;
   font-family: var(--mono);
   font-size: 0.58rem;
   letter-spacing: 0.15em;
@@ -662,7 +663,7 @@ html[data-mobile-3d-view="true"] .canvas-shell canvas {
 
 .component-index__grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 0.3rem;
 }
 
@@ -973,7 +974,7 @@ html[data-mobile-3d-view="true"] .canvas-shell canvas {
 .component-card__part-name {
   margin: 0.7rem 0 0;
   padding: 0.55rem 0.65rem;
-  border-left: 2px solid var(--cyan);
+  border-left: 2px solid #fff;
   display: grid;
   gap: 0.18rem;
   background: var(--panel-soft);
@@ -1095,7 +1096,7 @@ html[data-mobile-3d-view="true"] .canvas-shell canvas {
   display: flex;
   align-items: center;
   gap: 0.45rem;
-  color: var(--cyan);
+  color: #fff;
   font-size: 0.6rem;
   font-weight: 700;
 }
@@ -1104,8 +1105,8 @@ html[data-mobile-3d-view="true"] .canvas-shell canvas {
   width: 0.34rem;
   height: 0.34rem;
   border-radius: 50%;
-  background: var(--cyan);
-  box-shadow: 0 0 10px var(--cyan);
+  background: #fff;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.85);
   animation: signal-pulse 1.8s ease-in-out infinite;
 }
 
@@ -1160,7 +1161,7 @@ html[data-mobile-3d-view="true"] .canvas-shell canvas {
 }
 
 .control-loop li strong {
-  color: var(--cyan);
+  color: #fff;
   font-family: var(--mono);
   font-size: 0.7rem;
   letter-spacing: 0.12em;
@@ -1212,17 +1213,29 @@ html[data-mobile-3d-view="true"] .canvas-shell canvas {
   transform: translateX(-50%);
 }
 
-.control-loop__feedback-path span {
+.control-loop__feedback-label {
   position: absolute;
   top: 50%;
   left: 50%;
   padding: 0 0.45rem;
-  color: var(--cyan);
+  display: grid;
+  place-items: center;
+  gap: 0.08rem;
   background: var(--surface-raised);
+  transform: translate(-50%, calc(-50% - 0.2rem));
+}
+
+.control-loop__feedback-label small {
+  color: var(--faint);
+  font-size: 0.42rem;
+  letter-spacing: 0.12em;
+}
+
+.control-loop__feedback-label span {
+  color: var(--cyan);
   font-size: 0.7rem;
   letter-spacing: 0.12em;
   text-shadow: 0 0 10px rgba(69, 230, 255, 0.36);
-  transform: translate(-50%, -50%);
 }
 
 .scroll-cue {
@@ -1483,11 +1496,14 @@ html[data-mobile-3d-view="true"] .canvas-shell canvas {
   .scroll-cue.scroll-cue--first-chapter {
     bottom: calc(5.4rem + var(--safe-area-bottom));
     display: grid;
-    font-size: 0.58rem;
+    color: var(--amber);
+    font-size: 0.72rem;
+    text-shadow: 0 0 10px rgba(255, 184, 0, 0.72);
   }
 
   .scroll-cue.scroll-cue--first-chapter i {
     height: 1.5rem;
+    box-shadow: 0 0 10px rgba(255, 184, 0, 0.72);
   }
 
   .theme-button,
@@ -1799,7 +1815,7 @@ html[data-mobile-3d-view="true"] .canvas-shell canvas {
     letter-spacing: 0.06em;
   }
 
-  .control-loop__feedback-path span {
+  .control-loop__feedback-label span {
     font-size: 0.54rem;
     letter-spacing: 0.06em;
   }

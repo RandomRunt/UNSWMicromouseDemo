@@ -1,6 +1,6 @@
 import { Html } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { getResponsiveRobotScale } from '../config/responsive';
 import { SENSOR_BEAM_OPACITY } from './SensorBeams';
@@ -16,6 +16,7 @@ const ROTATION_RADIUS = 0.07;
 interface AxisArrowProps {
   direction: 'x' | 'y' | 'z';
   label: 'x' | 'y' | 'z';
+  active: boolean;
 }
 
 const AXIS_COLORS: Record<AxisArrowProps['label'], string> = {
@@ -64,7 +65,7 @@ function AxisRotationArrow({ direction }: Pick<AxisArrowProps, 'direction'>) {
   );
 }
 
-function AxisArrow({ direction, label }: AxisArrowProps) {
+function AxisArrow({ direction, label, active }: AxisArrowProps) {
   const color = AXIS_COLORS[label];
   const cylinderPosition: [number, number, number] = direction === 'x'
     ? [AXIS_LENGTH / 2, 0, 0]
@@ -92,7 +93,12 @@ function AxisArrow({ direction, label }: AxisArrowProps) {
         <coneGeometry args={[0.026, 0.075, 12]} />
         <meshBasicMaterial color={color} depthTest={false} toneMapped={false} />
       </mesh>
-      <Html position={arrowPosition} center className="inspection-axis-label" style={{ color }}>
+      <Html
+        position={arrowPosition}
+        center
+        className="inspection-axis-label"
+        style={{ color, opacity: active ? 1 : 0, transition: 'opacity 280ms ease' }}
+      >
         <span data-axis-direction={direction}>{label.toUpperCase()}</span>
       </Html>
       <AxisRotationArrow direction={direction} />
@@ -109,17 +115,36 @@ export function InspectionGuides({ activeChapter, assetAvailable }: InspectionGu
     encoder: THREE.Object3D | null;
   }>({ imu: null, encoder: null });
   const scratchPosition = useRef(new THREE.Vector3());
+  const reveal = useRef(0.001);
+  const [renderGuides, setRenderGuides] = useState(activeChapter === 2);
+
+  useEffect(() => {
+    if (activeChapter === 2) {
+      setRenderGuides(true);
+      return undefined;
+    }
+
+    const hideTimer = window.setTimeout(() => {
+      reveal.current = 0.001;
+      setRenderGuides(false);
+    }, 450);
+    return () => window.clearTimeout(hideTimer);
+  }, [activeChapter]);
 
   useEffect(() => {
     tracked.current = { imu: null, encoder: null };
   }, [assetAvailable]);
 
-  useFrame(() => {
+  useFrame((_, delta) => {
     if (!axisGroup.current || !encoderGroup.current) return;
-    const visible = activeChapter === 2;
-    axisGroup.current.visible = visible;
-    encoderGroup.current.visible = visible;
-    if (!visible) return;
+    axisGroup.current.visible = true;
+    encoderGroup.current.visible = true;
+    reveal.current = THREE.MathUtils.damp(
+      reveal.current,
+      activeChapter === 2 ? 1 : 0.001,
+      7,
+      delta,
+    );
 
     const responsiveScale = getResponsiveRobotScale(size.width);
     const imu = tracked.current.imu ?? scene.getObjectByName('imu');
@@ -128,7 +153,7 @@ export function InspectionGuides({ activeChapter, assetAvailable }: InspectionGu
       imu.getWorldPosition(scratchPosition.current);
       axisGroup.current.position.copy(scratchPosition.current);
       axisGroup.current.position.y += 0.24 * responsiveScale;
-      axisGroup.current.scale.setScalar(responsiveScale);
+      axisGroup.current.scale.setScalar(responsiveScale * reveal.current);
     } else {
       axisGroup.current.visible = false;
     }
@@ -139,29 +164,28 @@ export function InspectionGuides({ activeChapter, assetAvailable }: InspectionGu
       encoder.getWorldPosition(scratchPosition.current);
       encoderGroup.current.position.copy(scratchPosition.current);
       encoderGroup.current.position.x += 0.35 * responsiveScale;
-      encoderGroup.current.scale.setScalar(responsiveScale);
+      encoderGroup.current.scale.setScalar(responsiveScale * reveal.current);
     } else {
       encoderGroup.current.visible = false;
     }
   });
 
-  // Drei's Html portals are not hidden by an invisible Three.js parent, so
-  // remove the guide tree entirely outside chapter 03.
-  if (activeChapter !== 2) return null;
+  // Keep the tree alive briefly after chapter 03 so the scale-out can finish.
+  // It is then removed because Drei Html portals ignore Three.js visibility.
+  if (!renderGuides) return null;
 
   return (
     <group name="chapter_03_inspection_guides">
-      <group ref={axisGroup} name="imu_xyz_axis" visible={activeChapter === 2}>
+      <group ref={axisGroup} name="imu_xyz_axis">
         {/* Robot axes relabel scene X/Y/Z as Y/Z/X respectively. */}
-        <AxisArrow direction="x" label="y" />
-        <AxisArrow direction="y" label="z" />
-        <AxisArrow direction="z" label="x" />
+        <AxisArrow direction="x" label="y" active={activeChapter === 2} />
+        <AxisArrow direction="y" label="z" active={activeChapter === 2} />
+        <AxisArrow direction="z" label="x" active={activeChapter === 2} />
       </group>
 
       <group
         ref={encoderGroup}
         name="encoder_rotation_guide"
-        visible={activeChapter === 2}
         rotation={[0, Math.PI / 2, 0]}
       >
         <mesh>

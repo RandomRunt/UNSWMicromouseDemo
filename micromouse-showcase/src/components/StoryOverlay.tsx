@@ -178,7 +178,10 @@ export function StoryOverlay({
               <svg className="control-loop__feedback-arrowhead" viewBox="0 0 14 7">
                 <path d="M1 6 L7 0 L13 6" />
               </svg>
-              <span>FEEDBACK</span>
+              <div className="control-loop__feedback-label">
+                <small>04</small>
+                <span>FEEDBACK</span>
+              </div>
             </div>
           </div>
         </div>
