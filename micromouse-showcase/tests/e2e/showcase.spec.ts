@@ -75,7 +75,7 @@ test('supports keyboard-accessible component inspection', async ({ page }) => {
   const indexPanel = page.getByTestId('component-index-panel');
   await expect(indexToggle).toHaveAttribute('aria-expanded', 'false');
   await expect(indexPanel).toHaveAttribute('hidden', '');
-  await expect(page.getByTestId('component-hint')).toContainText('Select a component');
+  await expect(page.getByTestId('component-hint')).toHaveCount(0);
   await indexToggle.click();
   await expect(indexToggle).toHaveAttribute('aria-expanded', 'true');
   await expect(indexPanel).not.toHaveAttribute('hidden', '');
@@ -162,6 +162,18 @@ test('allows touch scrolling through the story on mobile', async ({ page }, test
   await routeModelToProceduralFallback(page);
   await page.goto('/');
 
+  // A normal swipe should land on the scrollable story, not the fixed canvas.
+  // This is important on mobile Safari, which may not transfer a gesture that
+  // starts on a fixed WebGL canvas to the document scroller.
+  await expect(page.locator('.story')).toHaveCSS('pointer-events', 'auto');
+  await expect(page.locator('.story')).toHaveCSS('touch-action', 'pan-y');
+  await expect(page.locator('.chapter-copy').first()).toHaveCSS('pointer-events', 'auto');
+  await expect(page.getByTestId('showcase-canvas')).toHaveCSS('pointer-events', 'none');
+  await expect.poll(() => page.evaluate(() => {
+    const target = document.elementFromPoint(window.innerWidth / 2, window.innerHeight * 0.7);
+    return Boolean(target?.closest('.story'));
+  })).toBe(true);
+
   const client = await page.context().newCDPSession(page);
   await client.send('Input.dispatchTouchEvent', {
     type: 'touchStart',
@@ -221,6 +233,12 @@ test('dismisses the orbit controls hint after a drag or inward zoom', async ({ p
     await page.mouse.wheel(0, -300);
   }
   await expect(page.getByTestId('orbit-hint')).toHaveCount(0);
+  await expect(page.getByTestId('component-hint')).toContainText('Select a component');
+  if (test.info().project.name === 'mobile-chromium') {
+    await expect(page.getByTestId('component-hint')).toContainText('Tap the robot or use the index');
+  } else {
+    await expect(page.getByTestId('component-hint')).toContainText('Click the robot or use the index');
+  }
   await expect(page.getByTestId('component-detail')).toHaveCount(0);
 });
 
@@ -334,15 +352,22 @@ test('keeps every chapter and overlay readable on iPhone-sized screens', async (
   await expect(orbitHint).toBeVisible();
   const orbitBounds = await orbitHint.boundingBox();
   const explodeBounds = await page.getByRole('button', { name: 'Explode robot' }).boundingBox();
+  const resetBounds = await page.getByRole('button', { name: 'Reset 3D view' }).boundingBox();
+  const exitBounds = await page.getByRole('button', { name: 'Exit 3D view' }).boundingBox();
   const finalIndexBounds = await page.locator('.component-index').boundingBox();
   expect(orbitBounds).not.toBeNull();
   expect(explodeBounds).not.toBeNull();
+  expect(resetBounds).not.toBeNull();
+  expect(exitBounds).not.toBeNull();
   expect(finalIndexBounds).not.toBeNull();
-  if (orbitBounds && explodeBounds && finalIndexBounds) {
+  if (orbitBounds && explodeBounds && resetBounds && exitBounds && finalIndexBounds) {
     expect(orbitBounds.x).toBeGreaterThanOrEqual(0);
     expect(orbitBounds.x + orbitBounds.width).toBeLessThanOrEqual(390);
-    expect(orbitBounds.y).toBeGreaterThanOrEqual(explodeBounds.y + explodeBounds.height);
-    expect(finalIndexBounds.x + finalIndexBounds.width).toBeLessThanOrEqual(explodeBounds.x);
+    expect(finalIndexBounds.y + finalIndexBounds.height).toBeLessThanOrEqual(orbitBounds.y);
+    expect(orbitBounds.y + orbitBounds.height).toBeLessThanOrEqual(explodeBounds.y);
+    expect(explodeBounds.x + explodeBounds.width).toBeLessThanOrEqual(resetBounds.x);
+    expect(resetBounds.x + resetBounds.width).toBeLessThanOrEqual(exitBounds.x);
+    expect(exitBounds.x + exitBounds.width).toBeLessThanOrEqual(390);
   }
 });
 

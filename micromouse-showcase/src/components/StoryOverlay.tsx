@@ -1,15 +1,18 @@
+import { ArrowRight, Box, Expand, LogOut, Orbit, RotateCcw } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { ArrowRight, ArrowUp } from 'lucide-react';
+import type { ThemeMode } from '../App';
 import { componentDefinitions } from '../config/components';
 import { chapters } from '../story/chapters';
 import type { ComponentId, ModelAvailability } from '../types/showcase';
-import type { ThemeMode } from '../App';
 
 interface StoryOverlayProps {
   activeChapter: number;
   explorationEnabled: boolean;
+  isMobileViewport: boolean;
   mobile3DViewActive: boolean;
+  showMobile3DViewGlow: boolean;
   onToggleMobile3DView: () => void;
+  onResetView: () => void;
   hasInspectedComponent: boolean;
   hasUsedOrbitControls: boolean;
   selected: ComponentId | null;
@@ -26,8 +29,11 @@ interface StoryOverlayProps {
 export function StoryOverlay({
   activeChapter,
   explorationEnabled,
+  isMobileViewport,
   mobile3DViewActive,
+  showMobile3DViewGlow,
   onToggleMobile3DView,
+  onResetView,
   hasInspectedComponent,
   hasUsedOrbitControls,
   selected,
@@ -40,7 +46,6 @@ export function StoryOverlay({
   isAutoScrolling,
   onToggleAutoScroll,
 }: StoryOverlayProps) {
-  const isInsideChapter = activeChapter === 1;
   const isExploreChapter = activeChapter === chapters.length - 1;
   const systemStatus = modelAvailability === 'checking'
     ? 'LOADING DIGITAL TWIN'
@@ -48,10 +53,24 @@ export function StoryOverlay({
       ? 'DIGITAL TWIN ONLINE'
       : 'MICROMOUSE VISUALISATION';
   const [isComponentIndexOpen, setIsComponentIndexOpen] = useState(false);
+  const [showControlLoop, setShowControlLoop] = useState(activeChapter === 3);
+  const [isControlLoopExiting, setIsControlLoopExiting] = useState(false);
 
   useEffect(() => {
     setIsComponentIndexOpen(false);
   }, [activeChapter]);
+
+  useEffect(() => {
+    if (activeChapter === 3) {
+      setShowControlLoop(true);
+      setIsControlLoopExiting(false);
+      return;
+    }
+
+    if (!showControlLoop) return;
+
+    setIsControlLoopExiting(true);
+  }, [activeChapter, showControlLoop]);
 
   const selectIndexedComponent = (id: ComponentId) => {
     onSelect(id);
@@ -114,11 +133,24 @@ export function StoryOverlay({
         </ol>
       </nav>
 
-      {activeChapter === 3 && (
-        <div className="control-loop" aria-label="Micromouse control loop: sense, think, move">
+      {showControlLoop && (
+        <div
+          className={`control-loop${isControlLoopExiting ? ' control-loop--exiting' : ''}`}
+          aria-label="Micromouse control loop: sense, think, move"
+          aria-hidden={isControlLoopExiting || undefined}
+          onAnimationEnd={(event) => {
+            if (
+              event.target !== event.currentTarget
+              || event.animationName !== 'panel-out'
+              || !isControlLoopExiting
+            ) return;
+            setShowControlLoop(false);
+            setIsControlLoopExiting(false);
+          }}
+        >
           <div className="control-loop__header" aria-hidden="true">
             <span className="control-loop__label"><i />CONTROL LOOP</span>
-            <small>04 // DECISION</small>
+            {/* <small>04 // DECISION</small> */}
           </div>
           <ol>
             {[
@@ -137,7 +169,15 @@ export function StoryOverlay({
           </ol>
           <div className="control-loop__feedback" aria-hidden="true">
             <div className="control-loop__feedback-path">
-              <ArrowUp />
+              <svg viewBox="0 0 100 34" preserveAspectRatio="none">
+                <path
+                  className="control-loop__feedback-shaft"
+                  d="M100 0 V24 A2.5 9 0 0 1 97.5 33 H2.5 A2.5 9 0 0 1 0 24 V0"
+                />
+              </svg>
+              <svg className="control-loop__feedback-arrowhead" viewBox="0 0 14 7">
+                <path d="M1 6 L7 0 L13 6" />
+              </svg>
               <span>FEEDBACK</span>
             </div>
           </div>
@@ -152,7 +192,7 @@ export function StoryOverlay({
             onClick={onToggleExploded}
             aria-pressed={explorationExploded}
           >
-            <span aria-hidden="true">06 //</span>
+            <Expand className="explode-toggle__icon" aria-hidden="true" />
             {explorationExploded ? 'Assemble robot' : 'Explode robot'}
           </button>
 
@@ -161,23 +201,42 @@ export function StoryOverlay({
             type="button"
             onClick={onToggleMobile3DView}
             aria-pressed={mobile3DViewActive}
+            data-attention-glow={showMobile3DViewGlow}
             data-testid="mobile-3d-view-toggle"
           >
-            <span className="mobile-3d-view-toggle__icon" aria-hidden="true"><i /></span>
+            {mobile3DViewActive
+              ? <LogOut className="mobile-3d-view-toggle__icon" aria-hidden="true" />
+              : <Box className="mobile-3d-view-toggle__icon" aria-hidden="true" />}
             <span>{mobile3DViewActive ? 'Exit 3D view' : 'Enter 3D view'}</span>
           </button>
+
+          {mobile3DViewActive && (
+            <button
+              className="mobile-reset-view"
+              type="button"
+              onClick={onResetView}
+              aria-label="Reset 3D view"
+              title="Reset view"
+            >
+              <RotateCcw aria-hidden="true" />
+            </button>
+          )}
         </>
       )}
 
-      {isInsideChapter && !hasInspectedComponent && !isComponentIndexOpen && (
+      {isExploreChapter
+        && explorationEnabled
+        && hasUsedOrbitControls
+        && !hasInspectedComponent
+        && !isComponentIndexOpen && (
         <div
-          className="interaction-hint interaction-hint--components"
+          className="interaction-hint interaction-hint--components interaction-hint--components-delayed"
           role="status"
           data-testid="component-hint"
         >
           <span className="interaction-hint__eyebrow">
             <i aria-hidden="true" />
-            02 // Inspection ready
+            06 // Inspection ready
           </span>
           <div className="interaction-hint__instruction">
             <svg viewBox="0 0 88 64" aria-hidden="true">
@@ -188,7 +247,7 @@ export function StoryOverlay({
             </svg>
             <span>
               <strong>Select a component</strong>
-              <small>Click the robot or use the index</small>
+              <small>{isMobileViewport ? 'Tap the robot or use the index' : 'Click the robot or use the index'}</small>
             </span>
           </div>
         </div>
@@ -205,14 +264,7 @@ export function StoryOverlay({
             360 // Controls online
           </span>
           <div className="interaction-hint__instruction">
-            <svg viewBox="0 0 88 64" aria-hidden="true">
-              <path className="interaction-hint__arc" d="M14 38C20 14 62 9 76 30" />
-              <path className="interaction-hint__arrow" d="m68 25 8 5-7 5" />
-              <path className="interaction-hint__arc interaction-hint__arc--return" d="M74 43C59 58 28 56 15 38" />
-              <path className="interaction-hint__arrow" d="m22 45-7-7 9-2" />
-              <rect className="interaction-hint__mouse" x="37" y="20" width="15" height="25" rx="7.5" />
-              <path className="interaction-hint__mouse-line" d="M44.5 20v8" />
-            </svg>
+            <Orbit className="interaction-hint__orbit-icon" aria-hidden="true" />
             <span>
               <strong>Drag to orbit</strong>
               <small>Scroll or pinch to zoom</small>
@@ -260,7 +312,10 @@ export function StoryOverlay({
       )}
 
       {!isExploreChapter && (
-        <div className="scroll-cue" aria-hidden="true">
+        <div
+          className={`scroll-cue${activeChapter === 0 ? ' scroll-cue--first-chapter' : ''}`}
+          aria-hidden="true"
+        >
           <span>SCROLL TO NAVIGATE</span>
           <i />
         </div>

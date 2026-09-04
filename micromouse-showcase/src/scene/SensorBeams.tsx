@@ -12,7 +12,8 @@ interface SensorBeamsProps {
 // Beam tuning. These stay deliberately short and narrow so they read as local
 // ToF measurements rather than spotlights crossing the whole scene.
 const BEAM_LENGTH = 0.9;
-export const SENSOR_BEAM_OPACITY = 0.5;
+export const SENSOR_BEAM_OPACITY = 0.8;
+const SENSOR_REVEAL_DELAY_SECONDS = 1;
 // This pushes the cylinder just beyond the sensor face. Increase it slightly
 // if a future GLB export makes the beam start inside the ToF sensor casing.
 const BEAM_ORIGIN_NUDGE = 0.35;
@@ -66,6 +67,8 @@ export function SensorBeams({ activeChapter, assetAvailable }: SensorBeamsProps)
   const leftBeam = useRef<THREE.Mesh>(null);
   const rightBeam = useRef<THREE.Mesh>(null);
   const reveal = useRef(0.001);
+  const revealDelayElapsed = useRef(0);
+  const wasSensingActive = useRef(false);
   const trackedObjects = useRef<{
     modelRoot: THREE.Object3D | null;
     tof_front: THREE.Object3D | null;
@@ -98,10 +101,21 @@ export function SensorBeams({ activeChapter, assetAvailable }: SensorBeamsProps)
 
   useFrame((_, delta) => {
     if (!group.current) return;
-    const targetReveal = activeChapter === 2 ? 1 : 0.001;
+    const sensingActive = activeChapter === 2;
+    if (sensingActive && !wasSensingActive.current) {
+      reveal.current = 0;
+      revealDelayElapsed.current = 0;
+    }
+    wasSensingActive.current = sensingActive;
+
+    if (sensingActive) revealDelayElapsed.current += delta;
+    const revealReady = sensingActive
+      && revealDelayElapsed.current >= SENSOR_REVEAL_DELAY_SECONDS;
+    const targetReveal = revealReady ? 1 : 0;
     // Increase 7 for a snappier beam reveal, or reduce it for a slower fade-in.
     reveal.current = THREE.MathUtils.damp(reveal.current, targetReveal, 7, delta);
-    group.current.visible = activeChapter === 2 || reveal.current > 0.01;
+    // Keep the beams completely hidden during the one-second chapter intro.
+    group.current.visible = revealReady || reveal.current > 0.01;
 
     const modelRoot = trackedObjects.current.modelRoot
       ?? scene.getObjectByName(assetAvailable ? 'showcase_model_root' : 'mouse_root');
@@ -150,18 +164,18 @@ export function SensorBeams({ activeChapter, assetAvailable }: SensorBeamsProps)
   });
 
   return (
-    <group ref={group} visible={activeChapter === 2}>
+    <group ref={group} visible={false}>
       <mesh ref={frontBeam}>
         <cylinderGeometry args={[0.01, 0.01, 1, 12]} />
-        <meshBasicMaterial color="#45e6ff" transparent opacity={SENSOR_BEAM_OPACITY} depthWrite={false} />
+        <meshBasicMaterial color="#ff4545" transparent opacity={SENSOR_BEAM_OPACITY} depthWrite={false} />
       </mesh>
       <mesh ref={leftBeam}>
         <cylinderGeometry args={[0.01, 0.01, 1, 12]} />
-        <meshBasicMaterial color="#45e6ff" transparent opacity={SENSOR_BEAM_OPACITY} depthWrite={false} />
+        <meshBasicMaterial color="#ff4545" transparent opacity={SENSOR_BEAM_OPACITY} depthWrite={false} />
       </mesh>
       <mesh ref={rightBeam}>
         <cylinderGeometry args={[0.01, 0.01, 1, 12]} />
-        <meshBasicMaterial color="#45e6ff" transparent opacity={SENSOR_BEAM_OPACITY} depthWrite={false} />
+        <meshBasicMaterial color="#ff4545" transparent opacity={SENSOR_BEAM_OPACITY} depthWrite={false} />
       </mesh>
     </group>
   );

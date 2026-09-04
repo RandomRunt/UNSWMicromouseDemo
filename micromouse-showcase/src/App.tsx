@@ -24,7 +24,11 @@ function App() {
   const [hasInspectedComponent, setHasInspectedComponent] = useState(false);
   const [hasUsedOrbitControls, setHasUsedOrbitControls] = useState(false);
   const [isMobile3DView, setIsMobile3DView] = useState(false);
+  const [hasEnteredMobile3DView, setHasEnteredMobile3DView] = useState(false);
+  const [viewResetKey, setViewResetKey] = useState(0);
   const [explorationExploded, setExplorationExploded] = useState(false);
+  const [easterEggSpinActive, setEasterEggSpinActive] = useState(false);
+  const explodeToggleCountRef = useRef(0);
   const [isAutoScrolling, setIsAutoScrolling] = useState(false);
   const autoScrollChapterRef = useRef(activeChapter);
   const inspectionIdleTimerRef = useRef<number | null>(null);
@@ -73,9 +77,19 @@ function App() {
     // Do not carry the optional chapter 06 teardown into another chapter.
     if (!isExploreChapter) {
       setExplorationExploded(false);
+      if (!easterEggSpinActive) explodeToggleCountRef.current = 0;
       setIsMobile3DView(false);
     }
-  }, [isExploreChapter]);
+  }, [easterEggSpinActive, isExploreChapter]);
+
+  useEffect(() => {
+    if (!easterEggSpinActive) return;
+
+    const explosionTimer = window.setTimeout(() => {
+      setExplorationExploded(true);
+    }, 5_000);
+    return () => window.clearTimeout(explosionTimer);
+  }, [easterEggSpinActive]);
 
   useEffect(() => {
     if (!isMobileViewport) setIsMobile3DView(false);
@@ -147,9 +161,26 @@ function App() {
   }, []);
 
   const handleToggleMobile3DView = useCallback(() => {
-    if (!isMobile3DView) setIsAutoScrolling(false);
+    if (!isMobile3DView) {
+      setIsAutoScrolling(false);
+      setHasEnteredMobile3DView(true);
+    }
     setIsMobile3DView((current) => !current);
   }, [isMobile3DView]);
+
+  const handleToggleExploded = useCallback(() => {
+    if (easterEggSpinActive) return;
+
+    explodeToggleCountRef.current += 1;
+    if (explodeToggleCountRef.current >= 5) {
+      explodeToggleCountRef.current = 0;
+      setExplorationExploded(false);
+      setEasterEggSpinActive(true);
+      return;
+    }
+
+    setExplorationExploded((current) => !current);
+  }, [easterEggSpinActive]);
 
   return (
     <>
@@ -158,6 +189,7 @@ function App() {
         activeChapter={activeChapter}
         explorationEnabled={explorationEnabled}
         explorationExploded={explorationExploded}
+        easterEggSpinActive={easterEggSpinActive}
         selected={selected}
         onSelect={selectComponent}
         onClearSelection={clearComponent}
@@ -168,20 +200,24 @@ function App() {
         modelAvailability={modelAvailability}
         theme={theme}
         componentAnchorRef={componentAnchorRef}
+        viewResetKey={viewResetKey}
       />
 
       <StoryOverlay
         activeChapter={activeChapter}
         explorationEnabled={explorationEnabled}
+        isMobileViewport={isMobileViewport}
         mobile3DViewActive={mobile3DViewActive}
+        showMobile3DViewGlow={!hasEnteredMobile3DView}
         onToggleMobile3DView={handleToggleMobile3DView}
+        onResetView={() => setViewResetKey((current) => current + 1)}
         hasInspectedComponent={hasInspectedComponent}
         hasUsedOrbitControls={hasUsedOrbitControls}
         selected={selected}
         modelAvailability={modelAvailability}
         onSelect={selectComponent}
         explorationExploded={explorationExploded}
-        onToggleExploded={() => setExplorationExploded((current) => !current)}
+        onToggleExploded={handleToggleExploded}
         theme={theme}
         onToggleTheme={() => setTheme((current) => current === 'dark' ? 'light' : 'dark')}
         isAutoScrolling={isAutoScrolling}
@@ -209,7 +245,7 @@ function App() {
                 : ''}`}
             >
               <div className="chapter-copy__meta">
-                <span>{chapter.number} / {String(chapters.length).padStart(2, '0')}</span>
+                <span>{chapter.number}{'\u2009/\u2009'}{String(chapters.length).padStart(2, '0')}</span>
                 <span>{chapter.eyebrow}</span>
               </div>
               <h1 id={`chapter-title-${chapter.id}`}>{chapter.title}</h1>

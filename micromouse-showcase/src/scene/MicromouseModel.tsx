@@ -2,12 +2,12 @@ import { useGLTF } from '@react-three/drei';
 import { ThreeEvent, useFrame } from '@react-three/fiber';
 import { ReactNode, useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
+import { MICROMOUSE_MODEL_URL } from '../config/assets';
 import {
   componentById,
   componentDefinitions,
   sensingComponentIds,
 } from '../config/components';
-import { MICROMOUSE_MODEL_URL } from '../config/assets';
 import type { ComponentId } from '../types/showcase';
 import { getComponentExplodeAmount, shouldSpinWheels } from './motion';
 
@@ -43,6 +43,7 @@ const COMPONENT_MESH_NAMES = new Set(
 const SENSING_ACCENT_COLORS = sensingComponentIds.map(
   (id) => new THREE.Color(componentById[id].accent),
 );
+const SENSING_PULSE_COLOR = new THREE.Color('#45e6ff');
 
 // React Three Fiber reports pointer travel between press and release as delta.
 // Ignore larger movements so orbit drags do not also select the mesh beneath them.
@@ -88,12 +89,15 @@ function updateSensingHighlights(
   activeChapter: number,
   selected: ComponentId | null,
   reducedMotion: boolean,
-  elapsedTime: number,
+  sensingElapsed: number,
 ) {
   const sensingActive = activeChapter === 2;
+  const pulseCycleTime = sensingElapsed % 3;
   const pulse = reducedMotion
-    ? 0.12
-    : 0.06 + (Math.sin(elapsedTime * 2) * 0.5 + 0.5) * 0.2;
+    ? 0
+    : pulseCycleTime < 1
+      ? 0
+      : Math.sin(((pulseCycleTime - 1) / 2) * Math.PI) * 0.65;
 
   sensingComponentIds.forEach((id, index) => {
     const materials = materialGroups.get(id);
@@ -105,9 +109,12 @@ function updateSensingHighlights(
       const original = originalMaterialStates.get(material);
       if (!original) return;
 
-      if (selectedHere || sensingActive) {
+      if (selectedHere) {
         material.emissive.copy(accent);
-        material.emissiveIntensity = selectedHere ? 0.7 : pulse;
+        material.emissiveIntensity = 0.7;
+      } else if (sensingActive && pulse > 0.001) {
+        material.emissive.copy(SENSING_PULSE_COLOR);
+        material.emissiveIntensity = pulse;
       } else {
         material.emissive.copy(original.emissive);
         material.emissiveIntensity = original.emissiveIntensity;
@@ -121,6 +128,7 @@ interface MicromouseProps {
   selected: ComponentId | null;
   onSelect: (id: ComponentId) => void;
   reducedMotion: boolean;
+  easterEggSpinActive: boolean;
 }
 
 interface PartProps {
@@ -218,12 +226,15 @@ function CircuitMaterial({ color = '#1b5b43', selected = false }: { color?: stri
   );
 }
 
-export function ProceduralMicromouse({ activeChapter, selected, onSelect, reducedMotion }: MicromouseProps) {
+export function ProceduralMicromouse({ activeChapter, selected, onSelect, reducedMotion, easterEggSpinActive }: MicromouseProps) {
   const root = useRef<THREE.Group>(null);
   const sensingMaterialGroups = useRef<SensingMaterialGroups>(new Map());
   const sensingMaterialStates = useRef(
     new Map<THREE.MeshStandardMaterial, OriginalMaterialState>(),
   );
+  const sensingPulseElapsed = useRef(0);
+  const easterSpinElapsed = useRef(0);
+  const easterSpinAngle = useRef(0);
 
   useEffect(() => {
     if (!root.current) return;
@@ -256,9 +267,22 @@ export function ProceduralMicromouse({ activeChapter, selected, onSelect, reduce
 
   useFrame((state, delta) => {
     if (!root.current) return;
-    const idle = activeChapter === 0 ? 0.18 : 0;
-    const desiredRotation = reducedMotion ? -0.22 : -0.25 + Math.sin(state.clock.elapsedTime * 0.35) * idle;
-    root.current.rotation.y = THREE.MathUtils.damp(root.current.rotation.y, desiredRotation, 2.5, delta);
+    sensingPulseElapsed.current = activeChapter === 2
+      ? sensingPulseElapsed.current + delta
+      : 0;
+    if (easterEggSpinActive) {
+      easterSpinElapsed.current = Math.min(5, easterSpinElapsed.current + delta);
+      const spinProgress = easterSpinElapsed.current / 5;
+      const angularVelocity = 0.5 + 48 * spinProgress * spinProgress * spinProgress;
+      easterSpinAngle.current += angularVelocity * delta;
+      root.current.rotation.y = easterSpinAngle.current;
+    } else {
+      easterSpinElapsed.current = 0;
+      easterSpinAngle.current = root.current.rotation.y;
+      const idle = activeChapter === 0 ? 0.18 : 0;
+      const desiredRotation = reducedMotion ? -0.22 : -0.25 + Math.sin(state.clock.elapsedTime * 0.35) * idle;
+      root.current.rotation.y = THREE.MathUtils.damp(root.current.rotation.y, desiredRotation, 2.5, delta);
+    }
     root.current.position.y = reducedMotion ? 0 : Math.sin(state.clock.elapsedTime * 0.7) * 0.015;
     updateSensingHighlights(
       sensingMaterialGroups.current,
@@ -266,7 +290,7 @@ export function ProceduralMicromouse({ activeChapter, selected, onSelect, reduce
       activeChapter,
       selected,
       reducedMotion,
-      state.clock.elapsedTime,
+      sensingPulseElapsed.current,
     );
   });
 
@@ -472,13 +496,16 @@ export function ProceduralMicromouse({ activeChapter, selected, onSelect, reduce
   );
 }
 
-export function GLBMicromouse({ activeChapter, selected, onSelect, reducedMotion }: MicromouseProps) {
+export function GLBMicromouse({ activeChapter, selected, onSelect, reducedMotion, easterEggSpinActive }: MicromouseProps) {
   const gltf = useGLTF(MICROMOUSE_MODEL_URL);
   const root = useRef<THREE.Group>(null);
   const wheelSpinAngle = useRef(0);
   const wheelSpinQuaternion = useRef(new THREE.Quaternion());
   // The checked-in GLB wheel geometry is thinnest on local X, its axle axis.
   const wheelSpinAxis = useRef(new THREE.Vector3(1, 0, 0));
+  const sensingPulseElapsed = useRef(0);
+  const easterSpinElapsed = useRef(0);
+  const easterSpinAngle = useRef(0);
   const explodeScratch = useMemo(() => ({
     parentToShowcase: new THREE.Matrix4(),
     showcaseToParent: new THREE.Matrix4(),
@@ -568,13 +595,27 @@ export function GLBMicromouse({ activeChapter, selected, onSelect, reducedMotion
   useFrame((state, delta) => {
     if (!root.current) return;
 
+    sensingPulseElapsed.current = activeChapter === 2
+      ? sensingPulseElapsed.current + delta
+      : 0;
+
     // Opening idle turn: 0.25 is the base angle, 0.18 is the sweep, and 0.35
     // controls how quickly it moves. Smaller values make the motion subtler.
-    const idleRotation = activeChapter === 0 && !reducedMotion
-      ? -0.25 + Math.sin(state.clock.elapsedTime * 0.35) * 0.18
-      : 0;
-    // The damping value controls how quickly the robot settles into its angle.
-    root.current.rotation.y = THREE.MathUtils.damp(root.current.rotation.y, idleRotation, 3, delta);
+    if (easterEggSpinActive) {
+      easterSpinElapsed.current = Math.min(5, easterSpinElapsed.current + delta);
+      const spinProgress = easterSpinElapsed.current / 5;
+      const angularVelocity = 0.5 + 48 * spinProgress * spinProgress * spinProgress;
+      easterSpinAngle.current += angularVelocity * delta;
+      root.current.rotation.y = easterSpinAngle.current;
+    } else {
+      easterSpinElapsed.current = 0;
+      easterSpinAngle.current = root.current.rotation.y;
+      const idleRotation = activeChapter === 0 && !reducedMotion
+        ? -0.25 + Math.sin(state.clock.elapsedTime * 0.35) * 0.18
+        : 0;
+      // The damping value controls how quickly the robot settles into its angle.
+      root.current.rotation.y = THREE.MathUtils.damp(root.current.rotation.y, idleRotation, 3, delta);
+    }
     root.current.updateWorldMatrix(true, true);
 
     componentDefinitions.forEach((component) => {
@@ -623,7 +664,7 @@ export function GLBMicromouse({ activeChapter, selected, onSelect, reducedMotion
       activeChapter,
       selected,
       reducedMotion,
-      state.clock.elapsedTime,
+      sensingPulseElapsed.current,
     );
   });
 
