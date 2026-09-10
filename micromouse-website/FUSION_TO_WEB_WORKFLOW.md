@@ -48,7 +48,7 @@ The short rule is:
 Use these locations consistently:
 
 ```text
-micromouse-showcase/
+micromouse-website/
 |-- cad/
 |   |-- source/
 |   |   |-- micromouse.f3d       # Native Fusion source, if self-contained

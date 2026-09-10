@@ -31,7 +31,7 @@ Make sure Docker Desktop or the Docker daemon is running before continuing.
 
 ### Start the showcase
 
-From the `micromouse-showcase` directory:
+From the `micromouse-website` directory:
 
 ```powershell
 docker compose up --build -d

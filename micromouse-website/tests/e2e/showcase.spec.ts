@@ -34,9 +34,7 @@ test('tells the complete six-chapter story without console errors', async ({ pag
   expect(errors).toEqual([]);
 });
 
-test('keeps the loader visible until a missing model selects the fallback', async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name !== 'chromium', 'Model startup state only needs one browser project');
-
+test('animates the loader in both themes until a missing model selects the fallback', async ({ page }) => {
   let resolveModelCheck: () => void = () => undefined;
   const modelCheckPending = new Promise<void>((resolve) => {
     resolveModelCheck = resolve;
@@ -54,13 +52,29 @@ test('keeps the loader visible until a missing model selects the fallback', asyn
 
   await page.goto('/');
   const canvas = page.getByTestId('showcase-canvas');
+  const loader = page.getByTestId('scene-loader');
+  const loaderLabel = loader.locator('.scene-loader__label');
+  const loaderDots = loader.locator('.scene-loader__dots');
   await expect(canvas).toHaveAttribute('data-model-source', 'loading');
-  await expect(page.getByTestId('scene-loader')).toContainText('LOADING MODEL...');
+  await expect(loader).not.toContainText('PLEASE WAIT');
+  await expect(loaderLabel).toHaveCSS('color', 'rgb(255, 255, 255)');
+
+  const initialDotCount = Number(await loaderDots.getAttribute('data-dot-count'));
+  expect(initialDotCount).toBeGreaterThanOrEqual(1);
+  expect(initialDotCount).toBeLessThanOrEqual(3);
+  const secondDotCount = initialDotCount % 3 + 1;
+  await expect.poll(() => loaderDots.getAttribute('data-dot-count')).toBe(String(secondDotCount));
+  const thirdDotCount = secondDotCount % 3 + 1;
+  await expect.poll(() => loaderDots.getAttribute('data-dot-count')).toBe(String(thirdDotCount));
+
+  await page.getByRole('button', { name: 'Switch to light mode' }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await expect(loaderLabel).toHaveCSS('color', 'rgb(255, 255, 255)');
   await expect(page.getByLabel('Showcase system status')).toContainText('LOADING DIGITAL TWIN');
 
   resolveModelCheck();
   await expect(canvas).toHaveAttribute('data-model-source', 'procedural-fallback');
-  await expect(page.getByTestId('scene-loader')).toHaveCount(0);
+  await expect(loader).toHaveCount(0);
   await expect(page.getByLabel('Showcase system status')).toContainText('MICROMOUSE VISUALISATION');
 });
 
@@ -390,7 +404,7 @@ test('keeps the explode control compact on narrow Android screens', async ({ pag
   }
 });
 
-test('switches themes, avoids a black dark mode, and remembers the choice', async ({ page }) => {
+test('switches themes while preserving signal colors and remembers the choice', async ({ page }) => {
   await routeModelToProceduralFallback(page);
   await page.goto('/');
 
@@ -407,8 +421,34 @@ test('switches themes, avoids a black dark mode, and remembers the choice', asyn
 
   await page.getByRole('button', { name: 'Switch to light mode' }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await expect.poll(() => page.locator('html').evaluate((html) => {
+    const styles = getComputedStyle(html);
+    return {
+      amber: styles.getPropertyValue('--amber').trim(),
+      orange: styles.getPropertyValue('--orange').trim(),
+      cyan: styles.getPropertyValue('--cyan').trim(),
+      lime: styles.getPropertyValue('--lime').trim(),
+      inheritedText: styles.color,
+    };
+  })).toEqual({
+    amber: '#ffb800',
+    orange: '#ff7043',
+    cyan: '#45e6ff',
+    lime: '#d8ff65',
+    inheritedText: 'rgb(25, 35, 38)',
+  });
+  await expect(page.locator('.status-dot')).toHaveCSS('background-color', 'rgb(216, 255, 101)');
 
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   await expect(page.getByRole('button', { name: 'Switch to dark mode' })).toBeVisible();
+
+  await page.getByTestId('chapter-inside').scrollIntoViewIfNeeded();
+  await expect(page.locator('.component-index__label')).toHaveCSS('color', 'rgb(25, 35, 38)');
+
+  await page.getByTestId('chapter-think').scrollIntoViewIfNeeded();
+  const controlLoopLabel = page.locator('.control-loop__label');
+  await expect(controlLoopLabel).toHaveCSS('color', 'rgb(25, 35, 38)');
+  await expect(controlLoopLabel.locator('i')).toHaveCSS('background-color', 'rgb(25, 35, 38)');
+  await expect(page.locator('.control-loop li strong').first()).toHaveCSS('color', 'rgb(25, 35, 38)');
 });

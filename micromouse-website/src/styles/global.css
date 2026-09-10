@@ -1,7 +1,7 @@
 :root {
   color-scheme: dark;
   font-family: Aptos, "Trebuchet MS", sans-serif;
-  color: #f7f5ed;
+  color: var(--ink);
   background: #4a5154;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -16,6 +16,7 @@
   --panel-soft: rgba(68, 75, 78, 0.78);
   --line: rgba(240, 246, 246, 0.24);
   --accent-ink: #172023;
+  --high-contrast-ink: #fff;
   --shadow: rgba(25, 29, 31, 0.3);
   --vignette-edge: rgba(45, 50, 52, 0.58);
   --amber: #ffb800;
@@ -42,11 +43,8 @@
   --surface-raised: rgba(247, 248, 244, 0.94);
   --panel-soft: rgba(242, 243, 239, 0.82);
   --line: rgba(28, 43, 47, 0.2);
-  --amber: #a96f00;
-  --orange: #b74921;
-  --cyan: #006f86;
-  --lime: #526c00;
   --accent-ink: #172023;
+  --high-contrast-ink: #192326;
   --shadow: rgba(45, 55, 58, 0.15);
   --vignette-edge: rgba(181, 187, 185, 0.42);
 }
@@ -617,7 +615,7 @@ html[data-mobile-3d-view="true"] .canvas-shell canvas {
 
 .component-index__label {
   display: block;
-  color: #fff;
+  color: var(--high-contrast-ink);
   font-family: var(--mono);
   font-size: 0.58rem;
   letter-spacing: 0.15em;
@@ -1096,7 +1094,7 @@ html[data-mobile-3d-view="true"] .canvas-shell canvas {
   display: flex;
   align-items: center;
   gap: 0.45rem;
-  color: #fff;
+  color: var(--high-contrast-ink);
   font-size: 0.6rem;
   font-weight: 700;
 }
@@ -1105,8 +1103,8 @@ html[data-mobile-3d-view="true"] .canvas-shell canvas {
   width: 0.34rem;
   height: 0.34rem;
   border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.85);
+  background: currentColor;
+  box-shadow: 0 0 10px currentColor;
   animation: signal-pulse 1.8s ease-in-out infinite;
 }
 
@@ -1161,7 +1159,7 @@ html[data-mobile-3d-view="true"] .canvas-shell canvas {
 }
 
 .control-loop li strong {
-  color: #fff;
+  color: var(--high-contrast-ink);
   font-family: var(--mono);
   font-size: 0.7rem;
   letter-spacing: 0.12em;
@@ -1293,18 +1291,19 @@ html[data-mobile-3d-view="true"] .canvas-shell canvas {
   min-width: 12rem;
   padding: 0.9rem;
   border: 1px solid rgba(69, 230, 255, 0.4);
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  color: var(--cyan);
-  background: var(--surface-raised);
+  color: #fff;
+  background: rgba(23, 32, 35, 0.94);
   font-family: var(--mono);
   font-size: 0.65rem;
   letter-spacing: 0.08em;
+  text-align: center;
+  white-space: nowrap;
 }
 
-.scene-loader__value {
-  color: var(--ink);
+.scene-loader__dots {
+  width: 3.25ch;
+  display: inline-block;
+  text-align: left;
 }
 
 @keyframes signal-pulse {

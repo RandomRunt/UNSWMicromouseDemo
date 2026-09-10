@@ -1,6 +1,6 @@
 # UNSW Micromouse Demo Day
 
-**[Open the live Micromouse 3D showcase](https://randomrunt.github.io/UNSWMicromouseDemo/)**
+**[Open the live Micromouse 3D showcase](https://randomrunt.github.io/UNSWMicromouseDemo/)** — <https://randomrunt.github.io/UNSWMicromouseDemo/>
 
 This repository contains the visitor-facing Micromouse showcase website, its presentation resources, and the 2026 Term 2 robot and computer-vision reference implementations. The website is the primary entry point; the implementation archive documents the firmware, sensing, estimation, planning, and control work behind the demonstration.
 
@@ -13,7 +13,7 @@ UNSWMicromouseDemo/
 ├── .github/
 │   └── workflows/
 │       └── micromouse-showcase.yml       # Website CI and publishing
-├── micromouse-showcase/                   # React/Three.js showcase website
+├── micromouse-website/                    # React/Three.js showcase website
 │   ├── cad/                               # Model sources and CAD workflow files
 │   │   ├── blender/                       # Blender materials and working assets
 │   │   ├── reference/                     # Component and modelling notes
@@ -38,7 +38,7 @@ UNSWMicromouseDemo/
 │   ├── docker-compose.yml                 # Local Nginx deployment
 │   ├── package.json                       # Dependencies and npm scripts
 │   └── README.md                          # Website operation guide
-├── micromouse-reference-implementations-26t2/
+├── micromouse-implementation-code-26t2/
 │   ├── ComputerVision-BestDiscreteMove/   # Task 4.1/4.2 vision notebooks
 │   ├── DemoBotDiscreteMove/               # DemoBot stop-and-turn controller
 │   ├── DemoBotDiscreteMoveBluetooth/      # Discrete controller with telemetry
@@ -47,7 +47,7 @@ UNSWMicromouseDemo/
 │   ├── F12A_T03-Micromouse-TaperedPPEKF/  # Original continuous-path reference
 │   ├── micromouse-BestDiscreteMove/        # Full mapping/planning reference
 │   └── IMPLEMENTATIONS.md                 # Detailed firmware comparison
-├── showcase-resources/
+├── demo-showcase-resources/
 │   ├── DemoPoster.pptx                    # Editable presentation poster
 │   ├── MicromouseDemoQRCode.svg           # Scalable showcase QR code
 │   └── MicromouseWebsiteDemoPoster.jpg     # Raster poster/website asset
@@ -57,14 +57,14 @@ UNSWMicromouseDemo/
 
 | Area | Purpose |
 |---|---|
-| [`micromouse-showcase/`](micromouse-showcase/) | Interactive website, 3D assets, tests, and deployment configuration |
-| [`micromouse-reference-implementations-26t2/`](micromouse-reference-implementations-26t2/) | Arduino controllers, computer-vision work, mapping tools, and generated route/map data |
-| [`showcase-resources/`](showcase-resources/) | Poster and QR-code resources used for Demo Day |
+| [`micromouse-website/`](micromouse-website/) | Interactive website, 3D assets, tests, and deployment configuration |
+| [`micromouse-implementation-code-26t2/`](micromouse-implementation-code-26t2/) | Arduino controllers, computer-vision work, mapping tools, and generated route/map data |
+| [`demo-showcase-resources/`](demo-showcase-resources/) | Poster and QR-code resources used for Demo Day |
 | [`.github/workflows/micromouse-showcase.yml`](.github/workflows/micromouse-showcase.yml) | Website test, build, container, and GitHub Pages pipeline |
 
 ## Micromouse showcase website
 
-[`micromouse-showcase/`](micromouse-showcase/) is a full-screen, scroll-driven Demo Day experience built with React, TypeScript, Vite, React Three Fiber, and Three.js. It presents six chapters:
+[`micromouse-website/`](micromouse-website/) is a full-screen, scroll-driven Demo Day experience built with React, TypeScript, Vite, React Three Fiber, and Three.js. It presents six chapters:
 
 1. Meet the robot.
 2. Explode and inspect its components.
@@ -97,16 +97,16 @@ The presentation has two synchronized layers:
 - Semantic HTML provides the story, chapter navigation, theme control, component buttons, detail cards, keyboard focus, and screen-reader announcements.
 - WebGL renders the robot, exploded component positions, sensor beams, camera motion, maze path, lighting, and final orbit controls.
 
-[`App.tsx`](micromouse-showcase/src/App.tsx) owns the shared chapter, selection, asset, reduced-motion, theme, and auto-scroll state. The app normalizes native scroll position from 0 to 1 so the active chapter can drive both the interface and the 3D choreography.
+[`App.tsx`](micromouse-website/src/App.tsx) owns the shared chapter, selection, asset, reduced-motion, theme, and auto-scroll state. The app normalizes native scroll position from 0 to 1 so the active chapter can drive both the interface and the 3D choreography.
 
-At startup, the app checks for [`public/models/micromouse.glb`](micromouse-showcase/public/models/micromouse.glb). If the exported digital twin is unavailable, a deterministic procedural model keeps the complete experience operational. Light and graphite-grey themes affect both the HTML and 3D environment, while reduced-motion preferences limit animation.
+At startup, the app checks for [`public/models/micromouse.glb`](micromouse-website/public/models/micromouse.glb). If the exported digital twin is unavailable, a deterministic procedural model keeps the complete experience operational. Light and graphite-grey themes affect both the HTML and 3D environment, while reduced-motion preferences limit animation.
 
 ### Run the website locally
 
 Requirements: Node.js 24 and npm.
 
 ```powershell
-cd micromouse-showcase
+cd micromouse-website
 npm ci
 npm run dev
 ```
@@ -124,7 +124,7 @@ npm run build
 The Docker image builds the Vite application with Node.js, then serves the generated static bundle from Nginx:
 
 ```powershell
-cd micromouse-showcase
+cd micromouse-website
 docker compose up --build -d
 ```
 
@@ -132,7 +132,7 @@ Open `http://localhost:8080`.
 
 ### Continuous integration and deployment
 
-The workflow remains at the repository-level path [`.github/workflows/micromouse-showcase.yml`](.github/workflows/micromouse-showcase.yml), as required by GitHub Actions. Its commands run inside `micromouse-showcase/`.
+The workflow remains at the repository-level path [`.github/workflows/micromouse-showcase.yml`](.github/workflows/micromouse-showcase.yml), as required by GitHub Actions. Its commands run inside `micromouse-website/`.
 
 For pull requests and pushes to `main`, the workflow installs locked dependencies, runs unit and Chromium browser tests, builds the production website, and verifies the Docker image. After a successful push to `main`, it publishes:
 
@@ -141,29 +141,29 @@ For pull requests and pushes to `main`, the workflow installs locked dependencie
 
 The Pages build uses `/UNSWMicromouseDemo/` as its Vite base path. Local and Docker builds use `/`.
 
-For deeper website documentation, see the [website operation guide](micromouse-showcase/README.md), [architecture guide](micromouse-showcase/docs/architecture/README.md), and [Fusion-to-web workflow](micromouse-showcase/FUSION_TO_WEB_WORKFLOW.md).
+For deeper website documentation, see the [website operation guide](micromouse-website/README.md), [architecture guide](micromouse-website/docs/architecture/README.md), and [Fusion-to-web workflow](micromouse-website/FUSION_TO_WEB_WORKFLOW.md).
 
 ## Reference implementations
 
-All firmware and supporting computer-vision work is grouped under [`micromouse-reference-implementations-26t2/`](micromouse-reference-implementations-26t2/). Each Arduino sketch is a separate build: open the `.ino` file inside the selected implementation folder and upload only that sketch.
+All firmware and supporting computer-vision work is grouped under [`micromouse-implementation-code-26t2/`](micromouse-implementation-code-26t2/). Each Arduino sketch is a separate build: open the `.ino` file inside the selected implementation folder and upload only that sketch.
 
-See the [complete implementations guide](micromouse-reference-implementations-26t2/IMPLEMENTATIONS.md) for route formats, configuration points, and implementation-specific cautions.
+See the [complete implementations guide](micromouse-implementation-code-26t2/IMPLEMENTATIONS.md) for route formats, configuration points, and implementation-specific cautions.
 
 ### Implementation overview
 
 | Implementation | Purpose | Route input |
 |---|---|---|
-| [`DemoBotDiscreteMove`](micromouse-reference-implementations-26t2/DemoBotDiscreteMove/) | Primary DemoBot controller with explicit forward legs and stationary turns | Compile-time `f`, `l`, `r` string with an optional Task 4.2 tuple block |
-| [`DemoBotDiscreteMoveBluetooth`](micromouse-reference-implementations-26t2/DemoBotDiscreteMoveBluetooth/) | Discrete controller with one-way HC-06 events and sensor telemetry | Same route format as `DemoBotDiscreteMove` |
-| [`DemoBotPPEKF`](micromouse-reference-implementations-26t2/DemoBotPPEKF/) | Continuous pure-pursuit controller with EKF pose estimation | Compile-time `f`, `l`, `r` string converted to waypoints |
-| [`DemoBotPinDetails4.1`](micromouse-reference-implementations-26t2/DemoBotPinDetails4.1/) | Earlier Task 4.1 controller and DemoBot hardware baseline | Compile-time `f`, `l`, `r` string |
-| [`micromouse-BestDiscreteMove`](micromouse-reference-implementations-26t2/micromouse-BestDiscreteMove/) | Full Task 4.1/4.2 command and Task 4.3 autonomous mapping reference | Command string or autonomous start/goal configuration |
-| [`F12A_T03-Micromouse-TaperedPPEKF`](micromouse-reference-implementations-26t2/F12A_T03-Micromouse-TaperedPPEKF/) | Original tapered pure-pursuit/EKF reference | Explicit waypoint array |
-| [`ComputerVision-BestDiscreteMove`](micromouse-reference-implementations-26t2/ComputerVision-BestDiscreteMove/) | Course-image processing for Tasks 4.1 and 4.2 | Images processed by Jupyter notebooks |
+| [`DemoBotDiscreteMove`](micromouse-implementation-code-26t2/DemoBotDiscreteMove/) | Primary DemoBot controller with explicit forward legs and stationary turns | Compile-time `f`, `l`, `r` string with an optional Task 4.2 tuple block |
+| [`DemoBotDiscreteMoveBluetooth`](micromouse-implementation-code-26t2/DemoBotDiscreteMoveBluetooth/) | Discrete controller with one-way HC-06 events and sensor telemetry | Same route format as `DemoBotDiscreteMove` |
+| [`DemoBotPPEKF`](micromouse-implementation-code-26t2/DemoBotPPEKF/) | Continuous pure-pursuit controller with EKF pose estimation | Compile-time `f`, `l`, `r` string converted to waypoints |
+| [`DemoBotPinDetails4.1`](micromouse-implementation-code-26t2/DemoBotPinDetails4.1/) | Earlier Task 4.1 controller and DemoBot hardware baseline | Compile-time `f`, `l`, `r` string |
+| [`micromouse-BestDiscreteMove`](micromouse-implementation-code-26t2/micromouse-BestDiscreteMove/) | Full Task 4.1/4.2 command and Task 4.3 autonomous mapping reference | Command string or autonomous start/goal configuration |
+| [`F12A_T03-Micromouse-TaperedPPEKF`](micromouse-implementation-code-26t2/F12A_T03-Micromouse-TaperedPPEKF/) | Original tapered pure-pursuit/EKF reference | Explicit waypoint array |
+| [`ComputerVision-BestDiscreteMove`](micromouse-implementation-code-26t2/ComputerVision-BestDiscreteMove/) | Course-image processing for Tasks 4.1 and 4.2 | Images processed by Jupyter notebooks |
 
 ### Discrete DemoBot controller
 
-[`DemoBotDiscreteMove/`](micromouse-reference-implementations-26t2/DemoBotDiscreteMove/) treats a route as a sequence of self-contained actions:
+[`DemoBotDiscreteMove/`](micromouse-implementation-code-26t2/DemoBotDiscreteMove/) treats a route as a sequence of self-contained actions:
 
 ```cpp
 const char ROUTE[] PROGMEM = "ffrfl";
@@ -184,11 +184,11 @@ const char ROUTE[] PROGMEM =
 
 Each tuple is `(clockwise turn degrees, forward distance millimetres)`. LiDAR wall correction is disabled during tuple legs so cylindrical obstacles are not interpreted as walls.
 
-The [Bluetooth variant](micromouse-reference-implementations-26t2/DemoBotDiscreteMoveBluetooth/) adds an HC-06 serial connection on Arduino pins D4 and D5 at 9600 baud. It reports status, route progress, targets, heading, encoder rotations, and LiDAR measurements. It is output-only and does not accept remote driving commands.
+The [Bluetooth variant](micromouse-implementation-code-26t2/DemoBotDiscreteMoveBluetooth/) adds an HC-06 serial connection on Arduino pins D4 and D5 at 9600 baud. It reports status, route progress, targets, heading, encoder rotations, and LiDAR measurements. It is output-only and does not accept remote driving commands.
 
 ### Continuous DemoBot controller
 
-[`DemoBotPPEKF/`](micromouse-reference-implementations-26t2/DemoBotPPEKF/) combines pure-pursuit path following with an extended Kalman filter pose estimator. It accepts the same grid notation:
+[`DemoBotPPEKF/`](micromouse-implementation-code-26t2/DemoBotPPEKF/) combines pure-pursuit path following with an extended Kalman filter pose estimator. It accepts the same grid notation:
 
 ```cpp
 const char ROUTE_COMMANDS[] PROGMEM = "ffrfl";
@@ -233,10 +233,10 @@ These are alternative controllers; they do not run together.
 
 The archive also retains the larger implementations from which the DemoBot-focused controllers were adapted:
 
-- [`micromouse-BestDiscreteMove/`](micromouse-reference-implementations-26t2/micromouse-BestDiscreteMove/) adds autonomous maze mapping and planning to the discrete approach.
-- [`F12A_T03-Micromouse-TaperedPPEKF/`](micromouse-reference-implementations-26t2/F12A_T03-Micromouse-TaperedPPEKF/) is the original continuous tapered pure-pursuit/EKF implementation.
-- [`ComputerVision-BestDiscreteMove/`](micromouse-reference-implementations-26t2/ComputerVision-BestDiscreteMove/) contains the course-image processing notebooks.
-- [`F12A_T03-Micromouse-TaperedPPEKF/high_level/`](micromouse-reference-implementations-26t2/F12A_T03-Micromouse-TaperedPPEKF/high_level/) contains tools and generated outputs for wall extraction, occupancy generation, path planning, and waypoint/map header export.
+- [`micromouse-BestDiscreteMove/`](micromouse-implementation-code-26t2/micromouse-BestDiscreteMove/) adds autonomous maze mapping and planning to the discrete approach.
+- [`F12A_T03-Micromouse-TaperedPPEKF/`](micromouse-implementation-code-26t2/F12A_T03-Micromouse-TaperedPPEKF/) is the original continuous tapered pure-pursuit/EKF implementation.
+- [`ComputerVision-BestDiscreteMove/`](micromouse-implementation-code-26t2/ComputerVision-BestDiscreteMove/) contains the course-image processing notebooks.
+- [`F12A_T03-Micromouse-TaperedPPEKF/high_level/`](micromouse-implementation-code-26t2/F12A_T03-Micromouse-TaperedPPEKF/high_level/) contains tools and generated outputs for wall extraction, occupancy generation, path planning, and waypoint/map header export.
 
 ### Hardware assumptions and safety
 
@@ -252,17 +252,17 @@ Before running the robot:
 6. Begin with conservative speed settings and a physical stop method.
 7. For PPEKF, test with `MOTORS_ENABLED` set to `false` and leave map correction disabled until its route and wall map agree.
 
-Do not upload an archived implementation without reviewing its wiring assumptions. In particular, the LiDAR XSHUT order differs between the DemoBot and full reference implementations; see the [hardware warning](micromouse-reference-implementations-26t2/IMPLEMENTATIONS.md#hardware-warning).
+Do not upload an archived implementation without reviewing its wiring assumptions. In particular, the LiDAR XSHUT order differs between the DemoBot and full reference implementations; see the [hardware warning](micromouse-implementation-code-26t2/IMPLEMENTATIONS.md#hardware-warning).
 
 ## Showcase resources
 
-[`showcase-resources/`](showcase-resources/) contains the editable PowerPoint poster, the scalable QR code for the live website, and the raster poster/website image. These files support the physical Demo Day display and are kept separate from both the deployable website and implementation archive.
+[`demo-showcase-resources/`](demo-showcase-resources/) contains the editable PowerPoint poster, the scalable QR code for the live website, and the raster poster/website image. These files support the physical Demo Day display and are kept separate from both the deployable website and implementation archive.
 
 ## Suggested starting points
 
-- To operate or develop the website, start with [`micromouse-showcase/README.md`](micromouse-showcase/README.md).
-- To understand the website internals, read the [architecture guide](micromouse-showcase/docs/architecture/README.md).
-- To compare firmware and route formats, read [`IMPLEMENTATIONS.md`](micromouse-reference-implementations-26t2/IMPLEMENTATIONS.md).
-- To tune stop-and-turn movement, start with [`DemoBotDiscreteMove.ino`](micromouse-reference-implementations-26t2/DemoBotDiscreteMove/DemoBotDiscreteMove.ino).
-- To use HC-06 monitoring, read the [Bluetooth controller guide](micromouse-reference-implementations-26t2/DemoBotDiscreteMoveBluetooth/README.md).
-- To study continuous estimation and control, start with the [PPEKF guide](micromouse-reference-implementations-26t2/DemoBotPPEKF/README.md).
+- To operate or develop the website, start with [`micromouse-website/README.md`](micromouse-website/README.md).
+- To understand the website internals, read the [architecture guide](micromouse-website/docs/architecture/README.md).
+- To compare firmware and route formats, read [`IMPLEMENTATIONS.md`](micromouse-implementation-code-26t2/IMPLEMENTATIONS.md).
+- To tune stop-and-turn movement, start with [`DemoBotDiscreteMove.ino`](micromouse-implementation-code-26t2/DemoBotDiscreteMove/DemoBotDiscreteMove.ino).
+- To use HC-06 monitoring, read the [Bluetooth controller guide](micromouse-implementation-code-26t2/DemoBotDiscreteMoveBluetooth/README.md).
+- To study continuous estimation and control, start with the [PPEKF guide](micromouse-implementation-code-26t2/DemoBotPPEKF/README.md).
