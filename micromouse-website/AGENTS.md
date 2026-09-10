@@ -1,6 +1,6 @@
 # AGENTS.md
 
-This file gives coding agents the repository-specific context needed to work safely and efficiently in `micromouse-showcase`. It applies to this directory and everything below it.
+This file gives coding agents the repository-specific context needed to work safely and efficiently in `micromouse-website`. It applies to this directory and everything below it.
 
 ## Project goal
 
@@ -16,7 +16,7 @@ Preserve these product qualities when making changes:
 
 ## Repository boundaries
 
-This app lives inside a larger worktree. Unless the task explicitly says otherwise, only edit files inside this `micromouse-showcase/` directory. Do not modify sibling projects or parent-level files.
+This app lives inside a larger worktree. Unless the task explicitly says otherwise, only edit files inside this `micromouse-website/` directory. Do not modify sibling projects or parent-level files.
 
 Before editing, inspect `git status --short` and preserve all pre-existing user changes. Do not revert, overwrite, or reformat unrelated work. `dist/`, `node_modules/`, `test-results/`, and `playwright-report/` are generated and should not be committed or edited by hand.
 

@@ -191,7 +191,7 @@ The runtime is read-only application content. There are no API endpoints and no 
 ## Repository structure
 
 ```text
-micromouse-showcase/
+micromouse-website/
 |-- README.md                         # Docker operation and development guide
 |-- FUSION_TO_WEB_WORKFLOW.md         # CAD and GLB preparation
 |-- docs/architecture/README.md       # This document
