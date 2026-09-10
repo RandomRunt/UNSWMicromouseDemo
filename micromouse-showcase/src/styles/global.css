@@ -1860,7 +1860,9 @@ html[data-mobile-3d-view="true"] .canvas-shell canvas {
   }
 
   .explode-toggle {
-    top: calc(8.5rem + var(--safe-area-top));
+    /* Keep the compact mobile control bottom-anchored. Setting both inset
+       edges stretches an absolutely positioned button on narrow Androids. */
+    top: auto;
   }
 
   .interaction-hint--orbit {
