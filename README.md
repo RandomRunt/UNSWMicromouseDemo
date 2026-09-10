@@ -1,8 +1,8 @@
 # UNSW Micromouse Demo Day
 
-**[Open the live Micromouse 3D showcase](https://randomrunt.github.io/UNSWMicromouseDemo/)** — <https://randomrunt.github.io/UNSWMicromouseDemo/>
+**[Open the live Micromouse 3D showcase](https://randomrunt.github.io/UNSWMicromouseDemo/)**: <https://randomrunt.github.io/UNSWMicromouseDemo/>
 
-This repository contains the visitor-facing Micromouse showcase website, its presentation resources, and the 2026 Term 2 robot and computer-vision reference implementations. The website is the primary entry point; the implementation archive documents the firmware, sensing, estimation, planning, and control work behind the demonstration.
+This repository contains the visitor-facing Micromouse showcase website, its showcase presentation resources, and 2026 Term 2 robot and computer-vision reference implementations. The website is an interactive demonstration of the robot and its features; the implementation archive documents the firmware, sensing, estimation, planning, and control work behind the demonstration.
 
 The website is a standalone visual experience. It does not send commands to the physical robot or receive live telemetry.
 
@@ -12,7 +12,7 @@ The website is a standalone visual experience. It does not send commands to the 
 UNSWMicromouseDemo/
 ├── .github/
 │   └── workflows/
-│       └── micromouse-showcase.yml       # Website CI and publishing
+│       └── micromouse-showcase.yml        # Website CI and publishing
 ├── micromouse-website/                    # React/Three.js showcase website
 │   ├── cad/                               # Model sources and CAD workflow files
 │   │   ├── blender/                       # Blender materials and working assets
@@ -45,12 +45,12 @@ UNSWMicromouseDemo/
 │   ├── DemoBotPinDetails4.1/              # Earlier DemoBot hardware baseline
 │   ├── DemoBotPPEKF/                      # DemoBot pure-pursuit/EKF controller
 │   ├── F12A_T03-Micromouse-TaperedPPEKF/  # Original continuous-path reference
-│   ├── micromouse-BestDiscreteMove/        # Full mapping/planning reference
+│   ├── micromouse-BestDiscreteMove/       # Full mapping/planning reference
 │   └── IMPLEMENTATIONS.md                 # Detailed firmware comparison
 ├── demo-showcase-resources/
 │   ├── DemoPoster.pptx                    # Editable presentation poster
 │   ├── MicromouseDemoQRCode.svg           # Scalable showcase QR code
-│   └── MicromouseWebsiteDemoPoster.jpg     # Raster poster/website asset
+│   └── MicromouseWebsiteDemoPoster.jpg    # Raster poster/website asset
 ├── .gitignore
 └── README.md
 ```
@@ -71,7 +71,7 @@ UNSWMicromouseDemo/
 3. Visualize its range sensors, encoders, and IMU.
 4. Explain the sense-estimate-follow-drive control chain.
 5. Show movement through a simplified maze.
-6. Release the camera for visitor exploration.
+6. Release the fixed camera to orbit camera mode for visitor exploration.
 
 ### How the website works
 
