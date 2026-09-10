@@ -371,6 +371,25 @@ test('keeps every chapter and overlay readable on iPhone-sized screens', async (
   }
 });
 
+test('keeps the explode control compact on narrow Android screens', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-chromium', 'Narrow Android coverage only runs in the touch project');
+  await routeModelToProceduralFallback(page);
+  await page.setViewportSize({ width: 360, height: 800 });
+  await page.goto('/');
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+
+  const explodeButton = page.getByRole('button', { name: 'Explode robot' });
+  await expect(explodeButton).toBeVisible();
+  const explodeBounds = await explodeButton.boundingBox();
+  expect(explodeBounds).not.toBeNull();
+  if (explodeBounds) {
+    expect(explodeBounds.x).toBeGreaterThanOrEqual(0);
+    expect(explodeBounds.width).toBeLessThanOrEqual(160);
+    expect(explodeBounds.height).toBeLessThanOrEqual(60);
+    expect(explodeBounds.y + explodeBounds.height).toBeLessThanOrEqual(800);
+  }
+});
+
 test('switches themes, avoids a black dark mode, and remembers the choice', async ({ page }) => {
   await routeModelToProceduralFallback(page);
   await page.goto('/');
