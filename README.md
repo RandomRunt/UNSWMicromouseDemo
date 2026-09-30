@@ -1,10 +1,20 @@
-# UNSW Micromouse Demo Day
+# Micromouse Demo for UNSW Open Day
 
-**[Open the live Micromouse 3D showcase](https://randomrunt.github.io/UNSWMicromouseDemo/)**: <https://randomrunt.github.io/UNSWMicromouseDemo/>
+### **A live 3D Micromouse showcase**: <https://randomrunt.github.io/UNSWMicromouseDemo/>
 
-This repository contains the visitor-facing Micromouse showcase website, its showcase presentation resources, and 2026 Term 2 robot and computer-vision reference implementations. The website is an interactive demonstration of the robot and its features; the implementation archive documents the firmware, sensing, estimation, planning, and control work behind the demonstration.
+#### Video Preview of Micromouse Website:
+https://github.com/user-attachments/assets/4f3df075-9739-44b0-ab01-2f6c8be8cf1a
 
-The website is a standalone visual experience. It does not send commands to the physical robot or receive live telemetry.
+#### Some user analytics from the UNSW Demo Day tracked using Cloudflare Web Analytics:
+<img width="1271" height="616" alt="image" src="https://github.com/user-attachments/assets/27220622-f4cf-4af2-b0a4-1c744f32e50b" />
+[NOTE: Relatively long page load times are caused by extra time required to load the micromouse robot model to the client.]
+
+
+## Repo Introduction
+
+This repository contains a 3D Micromouse showcase website used for UNSW Open Day, some showcase presentation resources, and 2026 Term 2 micromouse robot and computer-vision reference implementations.
+
+The website is a purely visual interactive demonstration of the robot and its features; the implementation archive documents the firmware, sensing, estimation, planning, and control work behind the demonstration.
 
 ## Repository structure
 
