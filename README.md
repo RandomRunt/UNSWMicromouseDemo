@@ -7,7 +7,7 @@ https://github.com/user-attachments/assets/4f3df075-9739-44b0-ab01-2f6c8be8cf1a
 
 #### Some user analytics from the demonstration on UNSW Open Day tracked using Cloudflare Web Analytics:
 <img width="1271" height="616" alt="image" src="https://github.com/user-attachments/assets/27220622-f4cf-4af2-b0a4-1c744f32e50b" />
-[NOTE: Relatively long page load times are caused by extra time required to load the micromouse robot model to the client.]
+[NOTE: Relatively long page load times is caused by long load times for the micromouse robot model (ie. model data being sent to a client).]
 
 
 ## Repo Introduction
