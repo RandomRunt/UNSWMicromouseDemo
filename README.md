@@ -1,4 +1,10 @@
-# Micromouse Demo for UNSW Open Day
+<h1 align="center"> Micromouse Showcase for UNSW Open Day </h1>
+
+<div align="center">
+<img alt="GitHub commit activity" src="https://img.shields.io/github/commit-activity/w/RandomRunt/UNSWMicromouseDemo">
+<img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/RandomRunt/UNSWMicromouseDemo">
+</div>
+
 
 ### **A live 3D Micromouse showcase**: <https://randomrunt.github.io/UNSWMicromouseDemo/>
 
